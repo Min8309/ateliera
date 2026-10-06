@@ -1,0 +1,518 @@
+/**
+ * @file main.css
+ * @description 아틀리에라(Ateliera) 프리미엄 글래스모피즘 UI 스타일시트
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+:root {
+  --bg-color: #0d0e12;
+  --panel-bg: rgba(20, 22, 28, 0.76);
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --panel-hover: rgba(255, 255, 255, 0.14);
+  --text-main: #f3f5f8;
+  --text-muted: #8b92a4;
+  --accent: #5e81f4;
+  --accent-glow: rgba(94, 129, 244, 0.4);
+  --gold: #d8b26e;
+  --gold-glow: rgba(216, 178, 110, 0.45);
+  --danger: #e05656;
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+  color: var(--text-main);
+}
+
+#webgl-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  touch-action: none;
+  display: block;
+}
+
+/* 상단 좌측 브랜드 헤더 */
+.brand-header {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-badge {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
+}
+
+.brand-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+/* 화면 우측 상단 액션 컨트롤 패널 */
+.action-control-panel {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 10;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.panel-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  padding: 7px 13px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.panel-btn:hover:not(:disabled) {
+  background: var(--panel-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.panel-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.panel-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.panel-btn.accent {
+  background: rgba(94, 129, 244, 0.22);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.panel-btn.accent:hover:not(:disabled) {
+  background: rgba(94, 129, 244, 0.35);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.panel-btn.danger:hover:not(:disabled) {
+  background: rgba(224, 86, 86, 0.2);
+  border-color: var(--danger);
+  color: #ff9191;
+}
+
+/* 화면 우측 하단 감성적인 Finish Artwork 버튼 */
+.finish-dock {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+}
+
+.btn-finish {
+  background: linear-gradient(135deg, rgba(216, 178, 110, 0.25), rgba(94, 129, 244, 0.3));
+  border: 1px solid rgba(216, 178, 110, 0.5);
+  color: #ffffff;
+  padding: 11px 20px;
+  border-radius: var(--radius-lg);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px var(--gold-glow);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.btn-finish:hover {
+  transform: translateY(-2px) scale(1.03);
+  background: linear-gradient(135deg, rgba(216, 178, 110, 0.4), rgba(94, 129, 244, 0.45));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 24px var(--gold-glow);
+  border-color: var(--gold);
+}
+
+.btn-finish:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* 조작 힌트 배지 (뷰포트 좌측 하단) */
+.controls-hint {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  z-index: 10;
+  background: rgba(18, 20, 26, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  backdrop-filter: blur(10px);
+  display: flex;
+  gap: 12px;
+}
+
+.controls-hint span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.controls-hint strong {
+  color: #d1d6e2;
+  font-weight: 500;
+}
+
+/* 하단 메인 플로팅 드로잉 툴바 */
+.drawing-dock {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  padding: 8px 18px;
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.5);
+}
+
+/* 수채화 안료 컬러 팔레트 */
+.palette-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-right: 1px solid var(--panel-border);
+  padding-right: 14px;
+}
+
+.color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.18s, border-color 0.18s;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch.active {
+  border-color: #ffffff;
+  transform: scale(1.22);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+}
+
+/* 슬라이더 컨트롤 */
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.slider-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.slider-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+}
+
+.slider-label span {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 85px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  background: var(--accent);
+}
+
+/* 타임랩스 재생 중 안내 배너 */
+.timelapse-banner {
+  position: absolute;
+  top: 76px;
+  right: 24px;
+  z-index: 10;
+  background: rgba(22, 26, 38, 0.88);
+  border: 1px solid var(--accent);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  display: none;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 18px var(--accent-glow);
+  font-size: 0.78rem;
+}
+
+.timelapse-banner.active {
+  display: flex;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulseAnim 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseAnim {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ==========================================================================
+   모달 오버레이 & 카드 스타일 (서명 모달 & 완성 축하 모달)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 10, 14, 0.75);
+  backdrop-filter: blur(18px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.modal-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.modal-card {
+  background: rgba(22, 25, 34, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 90%;
+  max-width: 440px;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.modal-header h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.modal-header p {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.modal-body {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #cfd5e2;
+}
+
+.form-group input, .form-group select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  color: #ffffff;
+  font-size: 0.85rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+}
+
+.form-group select option {
+  background: #191b22;
+  color: #ffffff;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #7a5af8);
+  border: none;
+  color: #ffffff;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--accent-glow);
+  transition: transform 0.15s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+/* 완성작 프리뷰 박스 */
+.completion-card {
+  max-width: 480px;
+  text-align: center;
+}
+
+.artwork-preview-box {
+  margin: 18px 0;
+  background: #111216;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  max-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.artwork-preview-box img {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.artwork-info-badge h3 {
+  font-size: 1.05rem;
+  color: #ffffff;
+}
+
+.artwork-info-badge p {
+  font-size: 0.8rem;
+  color: var(--gold);
+  margin-top: 2px;
+  margin-bottom: 18px;
+}
