@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Ateliera (아틀리에라) - 비 오는 창가 작업실 & 3D 수채화 갤러리</title>
-  <meta name="description" content="저지연 입력 파이프라인과 수채화 브러시 엔진 기반 WebXR 감성 아틀리에 플랫폼" />
+  <meta name="description" content="중간점 베지어 곡선 보간과 조색 팔레트 기반 WebXR 감성 아틀리에 플랫폼" />
   <link rel="stylesheet" href="/src/styles/main.css" />
 </head>
 <body>
@@ -19,7 +19,7 @@
     </div>
   </header>
 
-  <!-- [HUD] 실시간 지연 & 성능 디버그 오버레이 (Input-to-Screen Performance HUD) -->
+  <!-- [HUD] 실시간 지연 & 성능 디버그 오버레이 -->
   <div id="perf-hud" class="performance-hud">
     <div class="hud-header">
       <span class="hud-dot"></span>
@@ -51,9 +51,6 @@
     <button id="btn-rain-audio" class="panel-btn" title="빗소리 배경음악 켜기/끄기">
       🌧️ 빗소리 ON
     </button>
-    <button id="btn-undo" class="panel-btn" title="마지막 스트로크 제거">
-      ↩ Undo
-    </button>
     <button id="btn-clear" class="panel-btn danger" title="캔버스 및 스트로크 데이터 초기화">
       🗑️ Clear
     </button>
@@ -65,7 +62,7 @@
     </button>
   </aside>
 
-  <!-- 화면 우측 하단 감성적인 완성하기 버튼 -->
+  <!-- 화면 우측 하단 완성하기 버튼 -->
   <div class="finish-dock">
     <button id="btn-finish" class="btn-finish" title="작품에 서명하고 3D 액자를 씌워 완성합니다">
       ✨ Finish Artwork (완성하기)
@@ -80,34 +77,91 @@
 
   <!-- 조작 힌트 배지 (좌측 하단) -->
   <footer class="controls-hint">
-    <span>🖱️ <strong>좌클릭</strong>: 고정밀 수채화 드로잉</span>
+    <span>🖱️ <strong>좌클릭</strong>: 수채화 드로잉</span>
     <span>🖱️ <strong>우클릭</strong>: 3D 작업실 둘러보기</span>
     <span>🔍 <strong>휠</strong>: 줌</span>
   </footer>
 
-  <!-- 하단 플로팅 드로잉 툴바 -->
+  <!-- [조색 팔레트] 인터랙티브 물감 조색 패드 (Color Mixing Pad 팝오버) -->
+  <div id="mixing-palette-popover" class="mixing-palette-popover">
+    <div class="mixing-header">
+      <span class="mixing-title">🎨 수채화 조색 패드 (Mixing Pad)</span>
+      <div class="mixing-actions">
+        <div class="current-mixed-preview">
+          <span>채취색:</span>
+          <div id="preview-mixed-color" class="preview-chip" style="background: #2F528F;"></div>
+        </div>
+        <button id="btn-clean-pad" class="btn-clean-pad" title="조색 패드 맑게 씻어내기">💧 물세척</button>
+      </div>
+    </div>
+    <canvas id="mixing-canvas" width="320" height="160"></canvas>
+    <p class="mixing-hint">💡 물감을 칠해 문지른 뒤, 원하는 지점을 클릭하면 해당 혼합색이 브러시로 채취됩니다.</p>
+  </div>
+
+  <!-- 하단 메인 플로팅 드로잉 툴바 -->
   <main class="drawing-dock">
-    <!-- 수채화 안료 팔레트 -->
-    <div class="palette-group" id="palette-group">
-      <button class="color-swatch active" data-color="#2F528F" style="background: #2F528F;" title="군청 (Prussian Blue)"></button>
-      <button class="color-swatch" data-color="#285943" style="background: #285943;" title="비취 (Jade Green)"></button>
-      <button class="color-swatch" data-color="#A8382B" style="background: #A8382B;" title="주홍 (Vermilion)"></button>
-      <button class="color-swatch" data-color="#B87B32" style="background: #B87B32;" title="황토 (Ochre)"></button>
-      <button class="color-swatch" data-color="#1E2024" style="background: #1E2024;" title="먹색 (Ink Black)"></button>
-      <button class="color-swatch" data-color="#6E447E" style="background: #6E447E;" title="자색 (Violet)"></button>
+    <!-- 도구 전환 (브러시 ↔ 지우개) -->
+    <div class="tool-mode-group">
+      <button id="btn-tool-brush" class="btn-tool-tab active" title="수채화 브러시">
+        🖌️ 붓
+      </button>
+      <button id="btn-tool-eraser" class="btn-tool-tab" title="수채화 지우개 (깎아내기)">
+        🧹 지우개
+      </button>
     </div>
 
-    <!-- 브러시 속성 조절기 -->
+    <!-- 14종 전문 수채화 안료 컬러 팔레트 -->
+    <div class="palette-group" id="palette-group">
+      <!-- 블루 계열 -->
+      <button class="color-swatch active" data-color="#1B3B6F" style="background: #1B3B6F;" title="군청 (Ultramarine)"></button>
+      <button class="color-swatch" data-color="#2F528F" style="background: #2F528F;" title="감청 (Prussian Blue)"></button>
+      <button class="color-swatch" data-color="#0077B6" style="background: #0077B6;" title="감벽 (Cyan Blue)"></button>
+      <!-- 그린 계열 -->
+      <button class="color-swatch" data-color="#2D6A4F" style="background: #2D6A4F;" title="비취 (Viridian)"></button>
+      <button class="color-swatch" data-color="#4F772D" style="background: #4F772D;" title="풀색 (Sap Green)"></button>
+      <button class="color-swatch" data-color="#606C38" style="background: #606C38;" title="올리브 (Olive)"></button>
+      <!-- 옐로우/어스 계열 -->
+      <button class="color-swatch" data-color="#F4D35E" style="background: #F4D35E;" title="레몬 (Lemon Yellow)"></button>
+      <button class="color-swatch" data-color="#C28D4B" style="background: #C28D4B;" title="황토 (Yellow Ochre)"></button>
+      <button class="color-swatch" data-color="#7F4F24" style="background: #7F4F24;" title="고동 (Burnt Umber)"></button>
+      <!-- 레드/오렌지 계열 -->
+      <button class="color-swatch" data-color="#D97706" style="background: #D97706;" title="딥 오렌지 (Deep Orange)"></button>
+      <button class="color-swatch" data-color="#C84630" style="background: #C84630;" title="주홍 (Vermilion)"></button>
+      <button class="color-swatch" data-color="#9E2A2B" style="background: #9E2A2B;" title="연지 (Crimson Lake)"></button>
+      <button class="color-swatch" data-color="#6A4C93" style="background: #6A4C93;" title="자색 (Violet)"></button>
+      <!-- 먹색 -->
+      <button class="color-swatch" data-color="#1C1D21" style="background: #1C1D21;" title="먹색 (Ink Black)"></button>
+
+      <!-- 네이티브 커스텀 컬러 피커 -->
+      <div class="custom-picker-wrap" title="커스텀 색상 선택">
+        <input type="color" id="custom-color-picker" value="#1B3B6F" />
+      </div>
+    </div>
+
+    <!-- 조색 팔레트 열기 토글 버튼 -->
+    <div class="mixing-btn-wrap">
+      <button id="btn-toggle-mixing" class="btn-mixing-toggle" title="물감을 섞는 조색 패드 열기">
+        🎨 조색 패드
+      </button>
+    </div>
+
+    <!-- 슬라이더 (브러시 크기 & 불투명도) -->
     <div class="slider-group">
       <div class="slider-item">
-        <label for="brush-size" class="slider-label">붓 굵기: <span id="label-brush-size">32px</span></label>
-        <input type="range" id="brush-size" min="8" max="100" value="32" />
+        <label for="brush-size" class="slider-label">크기: <span id="label-brush-size">32px</span></label>
+        <input type="range" id="brush-size" min="1" max="100" value="32" />
       </div>
 
       <div class="slider-item">
-        <label for="brush-opacity" class="slider-label">농담(알파): <span id="label-brush-opacity">12%</span></label>
-        <input type="range" id="brush-opacity" min="8" max="25" value="12" />
+        <label for="brush-opacity" class="slider-label">농담: <span id="label-brush-opacity">12%</span></label>
+        <input type="range" id="brush-opacity" min="5" max="100" value="12" />
       </div>
+    </div>
+
+    <!-- Undo / Redo 버튼 그룹 -->
+    <div class="history-btn-group">
+      <button id="btn-undo" class="btn-history" title="실행 취소 (Undo)">↩</button>
+      <button id="btn-redo" class="btn-history" title="다시 실행 (Redo)">↪</button>
     </div>
   </main>
 

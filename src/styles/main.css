@@ -7,7 +7,7 @@
 
 :root {
   --bg-color: #0d0e12;
-  --panel-bg: rgba(20, 22, 28, 0.76);
+  --panel-bg: rgba(20, 22, 28, 0.78);
   --panel-border: rgba(255, 255, 255, 0.09);
   --panel-hover: rgba(255, 255, 255, 0.14);
   --text-main: #f3f5f8;
@@ -258,7 +258,7 @@ body, html {
   color: #ff9191;
 }
 
-/* 화면 우측 하단 감성적인 Finish Artwork 버튼 */
+/* 화면 우측 하단 완성하기 버튼 */
 .finish-dock {
   position: absolute;
   bottom: 24px;
@@ -323,7 +323,9 @@ body, html {
   font-weight: 500;
 }
 
-/* 하단 메인 플로팅 드로잉 툴바 */
+/* ==========================================================================
+   하단 메인 플로팅 드로잉 툴바 (도구, 안료 팔레트, 조색 패드 연동)
+   ========================================================================== */
 .drawing-dock {
   position: absolute;
   bottom: 24px;
@@ -332,60 +334,157 @@ body, html {
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  padding: 8px 18px;
+  padding: 8px 16px;
   border-radius: var(--radius-lg);
   backdrop-filter: blur(20px);
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.5);
+  max-width: 95vw;
 }
 
-/* 수채화 안료 컬러 팔레트 */
+/* 브러시 / 지우개 도구 전환 그룹 */
+.tool-mode-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-right: 1px solid var(--panel-border);
+  padding-right: 12px;
+}
+
+.btn-tool-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  padding: 7px 11px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.18s;
+  font-family: inherit;
+}
+
+.btn-tool-tab:hover {
+  background: var(--panel-hover);
+}
+
+.btn-tool-tab.active {
+  background: rgba(94, 129, 244, 0.3);
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* 14종 전문 수채화 안료 컬러 팔레트 */
 .palette-group {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   border-right: 1px solid var(--panel-border);
-  padding-right: 14px;
+  padding-right: 12px;
+  flex-wrap: wrap;
+  max-width: 320px;
 }
 
 .color-swatch {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: transform 0.18s, border-color 0.18s;
+  transition: transform 0.16s, border-color 0.16s;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
 }
 
 .color-swatch:hover {
-  transform: scale(1.15);
+  transform: scale(1.18);
 }
 
 .color-swatch.active {
   border-color: #ffffff;
-  transform: scale(1.22);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  transform: scale(1.25);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+}
+
+/* 커스텀 네이티브 컬러 피커 래퍼 */
+.custom-picker-wrap {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+
+.custom-picker-wrap input[type="color"] {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 38px;
+  height: 38px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+}
+
+/* 조색 팔레트 버튼 */
+.mixing-btn-wrap {
+  border-right: 1px solid var(--panel-border);
+  padding-right: 12px;
+}
+
+.btn-mixing-toggle {
+  background: linear-gradient(135deg, rgba(230, 110, 80, 0.25), rgba(94, 129, 244, 0.25));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 7px 11px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.btn-mixing-toggle:hover {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.btn-mixing-toggle.active {
+  background: linear-gradient(135deg, rgba(230, 110, 80, 0.45), rgba(94, 129, 244, 0.45));
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--gold-glow);
 }
 
 /* 슬라이더 컨트롤 */
 .slider-group {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  border-right: 1px solid var(--panel-border);
+  padding-right: 12px;
 }
 
 .slider-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
 .slider-label {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   color: var(--text-muted);
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
 }
 
 .slider-label span {
@@ -395,7 +494,7 @@ body, html {
 
 input[type="range"] {
   -webkit-appearance: none;
-  width: 85px;
+  width: 75px;
   height: 4px;
   background: rgba(255, 255, 255, 0.14);
   border-radius: 2px;
@@ -404,8 +503,8 @@ input[type="range"] {
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #ffffff;
   cursor: pointer;
@@ -416,6 +515,135 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.25);
   background: var(--accent);
+}
+
+/* Undo / Redo 버튼 그룹 */
+.history-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-history {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  padding: 6px 9px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.16s;
+}
+
+.btn-history:hover:not(:disabled) {
+  background: var(--panel-hover);
+  color: #ffffff;
+}
+
+.btn-history:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   실제 물감 조색 패드 (Color Mixing Pad 팝오버)
+   ========================================================================== */
+.mixing-palette-popover {
+  position: absolute;
+  bottom: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  background: rgba(24, 27, 36, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  animation: popoverFade 0.22s ease-out;
+}
+
+.mixing-palette-popover.active {
+  display: flex;
+}
+
+@keyframes popoverFade {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.mixing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mixing-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mixing-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.current-mixed-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.preview-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.btn-clean-pad {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-clean-pad:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* 조색 캔버스 (도자기 백자 팔레트 질감) */
+#mixing-canvas {
+  width: 320px;
+  height: 160px;
+  background: #fdfbf7;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: crosshair;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+  touch-action: none;
+}
+
+.mixing-hint {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 /* 타임랩스 재생 중 안내 배너 */
@@ -453,9 +681,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   50% { opacity: 1; transform: scale(1.2); }
 }
 
-/* ==========================================================================
-   모달 오버레이 & 카드 스타일 (서명 모달 & 완성 축하 모달)
-   ========================================================================== */
+/* 모달 오버레이 */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -585,7 +811,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transform: translateY(-1px);
 }
 
-/* 완성작 프리뷰 박스 */
 .completion-card {
   max-width: 480px;
   text-align: center;
