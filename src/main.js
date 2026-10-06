@@ -57,25 +57,26 @@ export class DualCanvasManager {
   }
 
   /**
-   * 수채화 캔버스지 질감 초기화 (부드러운 미색 + 은은한 종이 결)
+   * 수채화 캔버스지 질감 초기화 (따뜻하고 화사한 크림 미색 + 은은한 종이 결)
    */
   initPaperBackground() {
     this.bgCtx.save();
-    this.bgCtx.fillStyle = '#FAF7F2';
+    // 고급 아르쉬 수채화지 톤의 밝고 따뜻한 미색 (#FDF8F0)
+    this.bgCtx.fillStyle = '#FDF8F0';
     this.bgCtx.fillRect(0, 0, this.size, this.size);
 
-    // 미세한 종이 결(Grain) 패턴 생성
+    // 미세한 종이 결(Grain) 패턴 생성 (밝고 은은한 베이지 톤)
     const grainCanvas = document.createElement('canvas');
     grainCanvas.width = 64;
     grainCanvas.height = 64;
     const gCtx = grainCanvas.getContext('2d');
     const imgData = gCtx.createImageData(64, 64);
     for (let i = 0; i < imgData.data.length; i += 4) {
-      const val = 150 + (Math.random() - 0.5) * 16;
-      imgData.data[i] = val;
-      imgData.data[i + 1] = val - 3;
-      imgData.data[i + 2] = val - 8;
-      imgData.data[i + 3] = 10;
+      const val = (Math.random() - 0.5) * 10;
+      imgData.data[i] = 235 + val;
+      imgData.data[i + 1] = 228 + val;
+      imgData.data[i + 2] = 215 + val;
+      imgData.data[i + 3] = 7;
     }
     gCtx.putImageData(imgData, 0, 0);
 
@@ -358,8 +359,10 @@ class AtelieraApp {
     const planeGeo = new THREE.PlaneGeometry(2, 2);
     const planeMat = new THREE.MeshStandardMaterial({
       map: this.dualCanvas.texture,
-      roughness: 0.9,
-      metalness: 0.02
+      roughness: 0.88,
+      metalness: 0.0,
+      emissive: 0xfdf8f0,
+      emissiveIntensity: 0.36
     });
 
     this.drawingPlane = new THREE.Mesh(planeGeo, planeMat);

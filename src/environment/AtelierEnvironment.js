@@ -160,19 +160,26 @@ export class AtelierEnvironment {
     this.group.add(coolWindowLight.target);
 
     // 2. 캔버스를 집중 조명하는 따뜻한 백열광 스포트라이트 (약 3000K 웜톤)
-    this.canvasSpot = new THREE.SpotLight(0xffd699, 3.2);
-    this.canvasSpot.position.set(0, 3.8, 1.8);
+    this.canvasSpot = new THREE.SpotLight(0xffeed6, 3.8);
+    this.canvasSpot.position.set(0, 3.0, 2.6);
     this.canvasSpot.target.position.set(0, 0, 0);
-    this.canvasSpot.angle = Math.PI / 4.8;
-    this.canvasSpot.penumbra = 0.65;
+    this.canvasSpot.angle = Math.PI / 4.0;
+    this.canvasSpot.penumbra = 0.5;
     this.canvasSpot.castShadow = true;
     this.canvasSpot.shadow.mapSize.width = 1024;
     this.canvasSpot.shadow.mapSize.height = 1024;
     this.group.add(this.canvasSpot);
     this.group.add(this.canvasSpot.target);
 
-    // 3. 차분한 주변광
-    const ambLight = new THREE.AmbientLight(0x282c35, 0.6);
+    // 2-1. 캔버스 정면을 부드럽게 밝혀주는 따뜻한 직사 보조광 (미색 캔버스 발색 보장)
+    const frontFillLight = new THREE.DirectionalLight(0xfff6ea, 1.1);
+    frontFillLight.position.set(0, 1.0, 3.5);
+    frontFillLight.target.position.set(0, 0, 0);
+    this.group.add(frontFillLight);
+    this.group.add(frontFillLight.target);
+
+    // 3. 차분하고 따뜻한 실내 주변광
+    const ambLight = new THREE.AmbientLight(0x525660, 0.95);
     this.group.add(ambLight);
   }
 
