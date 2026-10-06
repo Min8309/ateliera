@@ -82,20 +82,24 @@
     <span>🔍 <strong>휠</strong>: 줌</span>
   </footer>
 
-  <!-- [조색 팔레트] 인터랙티브 물감 조색 패드 (Color Mixing Pad 팝오버) -->
+  <!-- [조색 팔레트] 드래그 이동 가능한 인터랙티브 물감 조색 패드 (Draggable Floating Panel) -->
   <div id="mixing-palette-popover" class="mixing-palette-popover">
-    <div class="mixing-header">
-      <span class="mixing-title">🎨 수채화 조색 패드 (Mixing Pad)</span>
+    <div class="mixing-header" id="mixing-drag-handle" title="드래그하여 원하는 위치로 이동하세요">
+      <div class="header-left">
+        <span class="drag-handle-grip">⠿</span>
+        <span class="mixing-title">🎨 수채화 조색 패드 (Mix Pad)</span>
+      </div>
       <div class="mixing-actions">
-        <div class="current-mixed-preview">
+        <div class="current-mixed-preview" title="현재 채취된 혼합 색상">
           <span>채취색:</span>
-          <div id="preview-mixed-color" class="preview-chip" style="background: #2F528F;"></div>
+          <div id="preview-mixed-color" class="preview-chip" style="background: #1B3B6F;"></div>
         </div>
         <button id="btn-clean-pad" class="btn-clean-pad" title="조색 패드 맑게 씻어내기">💧 물세척</button>
+        <button id="btn-close-mixing" class="btn-close-panel" title="조색 패드 닫기">✕</button>
       </div>
     </div>
     <canvas id="mixing-canvas" width="320" height="160"></canvas>
-    <p class="mixing-hint">💡 물감을 칠해 문지른 뒤, 원하는 지점을 클릭하면 해당 혼합색이 브러시로 채취됩니다.</p>
+    <p class="mixing-hint">💡 물감을 문지른 후 클릭하면 해당 혼합색이 브러시로 채취됩니다. (상단 바로 이동 가능)</p>
   </div>
 
   <!-- 하단 메인 플로팅 드로잉 툴바 -->

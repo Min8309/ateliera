@@ -600,7 +600,9 @@ class AtelieraApp {
     const toggleBtn = document.getElementById('btn-toggle-mixing');
     const mixingCanvas = document.getElementById('mixing-canvas');
     const btnClean = document.getElementById('btn-clean-pad');
+    const btnClose = document.getElementById('btn-close-mixing');
     const previewChip = document.getElementById('preview-mixed-color');
+    const dragHandle = document.getElementById('mixing-drag-handle');
 
     if (!mixingCanvas) return;
     const mCtx = mixingCanvas.getContext('2d', { willReadFrequently: true });
@@ -631,9 +633,78 @@ class AtelieraApp {
       toggleBtn.classList.toggle('active', isActive);
     });
 
+    if (btnClose) {
+      btnClose.addEventListener('click', () => {
+        popover.classList.remove('active');
+        toggleBtn.classList.remove('active');
+      });
+    }
+
     btnClean.addEventListener('click', () => {
       resetMixingCanvas();
     });
+
+    // --- 헤더 드래그 이동 로직 (Draggable Floating Panel) ---
+    let isDraggingPanel = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let panelInitialLeft = 0;
+    let panelInitialTop = 0;
+
+    if (dragHandle) {
+      dragHandle.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button') || e.target.closest('input')) return;
+
+        isDraggingPanel = true;
+        dragHandle.classList.add('dragging');
+
+        const rect = popover.getBoundingClientRect();
+        panelInitialLeft = rect.left;
+        panelInitialTop = rect.top;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+
+        // 고정 위치를 픽셀 절대 좌표로 전환
+        popover.style.right = 'auto';
+        popover.style.bottom = 'auto';
+        popover.style.left = `${panelInitialLeft}px`;
+        popover.style.top = `${panelInitialTop}px`;
+
+        dragHandle.setPointerCapture(e.pointerId);
+      });
+
+      dragHandle.addEventListener('pointermove', (e) => {
+        if (!isDraggingPanel) return;
+
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+
+        let nextLeft = panelInitialLeft + dx;
+        let nextTop = panelInitialTop + dy;
+
+        // 화면 밖으로 이탈 방지 클램핑
+        const padW = popover.offsetWidth || 340;
+        const padH = popover.offsetHeight || 240;
+        nextLeft = Math.max(10, Math.min(window.innerWidth - padW - 10, nextLeft));
+        nextTop = Math.max(10, Math.min(window.innerHeight - padH - 10, nextTop));
+
+        popover.style.left = `${nextLeft}px`;
+        popover.style.top = `${nextTop}px`;
+      });
+
+      const stopDrag = (e) => {
+        if (isDraggingPanel) {
+          isDraggingPanel = false;
+          dragHandle.classList.remove('dragging');
+          try {
+            dragHandle.releasePointerCapture(e.pointerId);
+          } catch (_) {}
+        }
+      };
+
+      dragHandle.addEventListener('pointerup', stopDrag);
+      dragHandle.addEventListener('pointercancel', stopDrag);
+    }
 
     // 조색 패드 드로잉 & 컬러 스포이드 채취
     let isMixing = false;
