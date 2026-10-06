@@ -101,12 +101,21 @@
 
   <!-- 하단 메인 플로팅 드로잉 툴바 -->
   <main class="drawing-dock">
-    <!-- 도구 전환 (브러시 ↔ 지우개) -->
-    <div class="tool-mode-group">
-      <button id="btn-tool-brush" class="btn-tool-tab active" title="수채화 브러시">
-        🖌️ 붓
+    <!-- 도구 전환 (브러시 4종 ↔ 지우개) -->
+    <div class="tool-mode-group" id="tool-mode-group">
+      <button class="btn-tool-tab" data-tool="pen" title="기본 펜 (경계 또렷, 정직한 굵기)">
+        🖊️ 펜
       </button>
-      <button id="btn-tool-eraser" class="btn-tool-tab" title="수채화 지우개 (깎아내기)">
+      <button class="btn-tool-tab" data-tool="pencil" title="연필/목탄 (종이 요철 질감 & 틸트 기울기 반응)">
+        ✏️ 연필
+      </button>
+      <button class="btn-tool-tab active" data-tool="watercolor" title="수채 브러시 (에지 번짐 & 투명도 겹침)">
+        🖌️ 수채
+      </button>
+      <button class="btn-tool-tab" data-tool="airbrush" title="에어브러시 (부드러운 스프레이 그라데이션)">
+        💨 에어
+      </button>
+      <button class="btn-tool-tab" data-tool="eraser" title="수채화 지우개 (자연스럽게 깎아내기)">
         🧹 지우개
       </button>
     </div>

@@ -1,12 +1,13 @@
 /**
  * @file main.js
- * @description Ateliera (아틀리에라) - 중간점 2차 베지어 곡선 보간, 가우시안 스탬프, 조색 패드 및 저지연 입력 파이프라인
+ * @description Ateliera (아틀리에라) - 전략 패턴 기반 4종 브러시, 중간점 2차 베지어 곡선 보간, 조색 패드 및 저지연 입력 파이프라인
  * 
- * [2주차 핵심 기능]
- * 1. 중간점 2차 베지어(Midpoint Quadratic Bézier) 실시간 곡선 보간 및 균일 스탬핑 (Spacing: 0.15)
- * 2. 가우시안 페이드 브러시 팁 사전 생성(Pre-bake) 및 필압 매핑 공식 (size = brushSize * P^1.2, alpha = baseOpacity * P)
- * 3. 지우개 도구 (destination-out) 및 완전한 Undo / Redo 스택
- * 4. 14종 전문 수채화 안료 팔레트 & 실제 물감 조색(Color Mixing Pad) 픽셀 스포이드 엔진
+ * [3주차 브러시 전략 패턴 통합]
+ * 1. BrushManager: 4종 브러시(펜, 연필/목탄, 수채, 에어브러시) + 지우개 렌더링 파이프라인
+ * 2. 중간점 2차 베지어 곡선 보간 & 브러시별 고유 스탬프 간격(Spacing) 최적화
+ * 3. 틸트(tiltX, tiltY) 및 필압 반응 정밀 렌더링
+ * 4. 도구 전환 시 슬라이더(크기, 투명도) 자동 동기화
+ * 5. 타임랩스 및 Undo/Redo 완벽 재현
  */
 
 import * as THREE from 'three';
@@ -15,6 +16,7 @@ import { AtelierEnvironment } from './environment/AtelierEnvironment.js';
 import { FrameBuilder } from './frame/FrameBuilder.js';
 import { CompletionManager } from './completion/CompletionManager.js';
 import { createPoint, createStroke, createArtwork } from './types/DataModels.js';
+import { BrushManager } from './drawing/brushes/BrushManager.js';
 
 /* ==========================================================================
    1. 듀얼 캔버스 레이어 관리자 (저지연 desynchronized 옵션)
@@ -32,7 +34,7 @@ export class DualCanvasManager {
     this.bgCanvas.height = this.size;
     this.bgCtx = this.bgCanvas.getContext('2d', { willReadFrequently: true });
 
-    // 액티브 캔버스 (저지연 드로잉 레이어)
+    // 액티브 캔버스 (저지연 실시간 드로잉 레이어)
     this.activeCanvas = document.createElement('canvas');
     this.activeCanvas.width = this.size;
     this.activeCanvas.height = this.size;
@@ -98,9 +100,9 @@ export class DualCanvasManager {
 
   /**
    * 스트로크 완료 시 커밋 (지우개 도구인 경우 destination-out으로 합성)
-   * @param {'brush'|'eraser'} tool
+   * @param {'pen'|'pencil'|'watercolor'|'airbrush'|'eraser'} tool
    */
-  commitActiveToBackground(tool = 'brush') {
+  commitActiveToBackground(tool = 'watercolor') {
     this.bgCtx.save();
     if (tool === 'eraser') {
       this.bgCtx.globalCompositeOperation = 'destination-out';
@@ -135,88 +137,55 @@ export class DualCanvasManager {
 }
 
 /* ==========================================================================
-   2. 중간점 베지어 보간 및 가우시안 스탬프 브러시 엔진 (BezierStampEngine)
+   2. 전략 패턴 기반 브러시 렌더러 엔진 (BezierBrushEngine)
    ========================================================================== */
-export class BezierStampEngine {
+export class BezierBrushEngine {
   /**
    * @param {DualCanvasManager} dualCanvas
    */
   constructor(dualCanvas) {
     this.dualCanvas = dualCanvas;
 
-    // 도구 기본 속성
-    this.tool = 'brush';       // 'brush' | 'eraser'
-    this.color = '#1B3B6F';    // 기본 군청색
-    this.baseSize = 32;        // 1 ~ 100px
-    this.baseOpacity = 0.12;   // 0.05 ~ 1.0
-    this.spacingRatio = 0.15;  // 스탬프 간격 비율 (0.15)
+    // 브러시 전략 매니저 인스턴스화
+    this.brushManager = new BrushManager();
+
+    // 현재 활성 도구 속성
+    this.tool = 'watercolor';
+    this.color = '#1B3B6F';
+    this.baseSize = 36;
+    this.baseOpacity = 0.12;
 
     // 연속 곡선 보간용 포인트 버퍼
     this.points = [];
-
-    // 가우시안 팁 오프스크린 캔버스 캐시 (Pre-bake Cache)
-    this.tipCache = new Map();
   }
 
   /**
-   * 가우시안 페이드 브러시 팁 사전 생성(Pre-bake)
-   * @param {string} color
-   * @returns {HTMLCanvasElement}
+   * 도구 전환 (전략 패턴 위임)
+   * @param {string} toolName - 'pen' | 'pencil' | 'watercolor' | 'airbrush' | 'eraser'
    */
-  getGaussianTip(color) {
-    const key = color;
-    if (this.tipCache.has(key)) {
-      return this.tipCache.get(key);
-    }
-
-    const tipCanvas = document.createElement('canvas');
-    const radius = 64;
-    tipCanvas.width = radius * 2;
-    tipCanvas.height = radius * 2;
-    const ctx = tipCanvas.getContext('2d');
-
-    const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
-    grad.addColorStop(0, color);
-    grad.addColorStop(0.35, color);
-    grad.addColorStop(0.75, color);
-    grad.addColorStop(1, 'transparent');
-
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(radius, radius, radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    this.tipCache.set(key, tipCanvas);
-    return tipCanvas;
-  }
-
-  /**
-   * 필압 매핑 공식 적용
-   * @param {number} pressure
-   */
-  calcEffectiveSize(pressure) {
-    const p = Math.max(0.01, Math.min(1.0, pressure));
-    return this.baseSize * Math.max(0.12, Math.pow(p, 1.2));
-  }
-
-  calcEffectiveAlpha(pressure) {
-    const p = Math.max(0.01, Math.min(1.0, pressure));
-    return this.baseOpacity * Math.max(0.15, p);
+  setTool(toolName) {
+    this.tool = toolName;
+    const config = this.brushManager.setTool(toolName);
+    this.baseSize = config.defaultSize;
+    this.baseOpacity = config.defaultOpacity;
+    return config;
   }
 
   /**
    * 스트로크 시작
+   * @param {import('./types/DataModels.js').Point} pt
    */
   startStroke(pt) {
     this.points = [pt];
 
     const ctx = this.dualCanvas.activeCtx;
-    this.renderStamp(ctx, pt.x, pt.y, pt.pressure);
+    this.renderStamp(ctx, pt.x, pt.y, pt.pressure, pt);
     this.dualCanvas.updateDisplay();
   }
 
   /**
    * 스트로크 진행 (중간점 기반 2차 베지어 곡선 보간 및 균일 스탬핑)
+   * @param {import('./types/DataModels.js').Point} pt
    */
   addPoint(pt) {
     this.points.push(pt);
@@ -224,24 +193,27 @@ export class BezierStampEngine {
     const ctx = this.dualCanvas.activeCtx;
 
     if (len === 2) {
-      // 포인트가 2개인 초기 구간: 선형 보간
+      // 포인트 2개: 선형 보간
       this.interpolateLinear(ctx, this.points[0], this.points[1]);
     } else if (len >= 3) {
-      // 포인트가 3개 이상: 중간점 2차 베지어 곡선 보간
+      // 포인트 3개 이상: 중간점 2차 베지어 곡선 보간
       const p0 = this.points[len - 3];
       const p1 = this.points[len - 2];
       const p2 = this.points[len - 1];
 
-      // 시작 중간점 M0, 종료 중간점 M1, 제어점 P1
       const m0 = {
         x: (p0.x + p1.x) / 2,
         y: (p0.y + p1.y) / 2,
-        pressure: (p0.pressure + p1.pressure) / 2
+        pressure: (p0.pressure + p1.pressure) / 2,
+        tiltX: (p0.tiltX + p1.tiltX) / 2,
+        tiltY: (p0.tiltY + p1.tiltY) / 2
       };
       const m1 = {
         x: (p1.x + p2.x) / 2,
         y: (p1.y + p2.y) / 2,
-        pressure: (p1.pressure + p2.pressure) / 2
+        pressure: (p1.pressure + p2.pressure) / 2,
+        tiltX: (p1.tiltX + p2.tiltX) / 2,
+        tiltY: (p1.tiltY + p2.tiltY) / 2
       };
 
       this.interpolateBezier(ctx, m0, p1, m1);
@@ -256,9 +228,10 @@ export class BezierStampEngine {
   interpolateLinear(ctx, p1, p2) {
     const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
     const avgPressure = (p1.pressure + p2.pressure) / 2;
-    const size = this.calcEffectiveSize(avgPressure);
+    const spacingRatio = this.brushManager.getSpacingRatio(this.tool);
+    const size = this.baseSize * (0.3 + avgPressure * 0.7);
 
-    const step = Math.max(1.0, size * this.spacingRatio);
+    const step = Math.max(1.0, size * spacingRatio);
     const steps = Math.ceil(dist / step);
 
     for (let i = 1; i <= steps; i++) {
@@ -266,21 +239,24 @@ export class BezierStampEngine {
       const x = p1.x + (p2.x - p1.x) * t;
       const y = p1.y + (p2.y - p1.y) * t;
       const pressure = p1.pressure + (p2.pressure - p1.pressure) * t;
-      this.renderStamp(ctx, x, y, pressure);
+      const pt = {
+        tiltX: p1.tiltX + (p2.tiltX - p1.tiltX) * t,
+        tiltY: p1.tiltY + (p2.tiltY - p1.tiltY) * t
+      };
+      this.renderStamp(ctx, x, y, pressure, pt);
     }
   }
 
   /**
    * 중간점 기반 2차 베지어 곡선 보간 (Bézier Interpolation)
-   * B(t) = (1-t)^2 * M0 + 2(1-t)t * P1 + t^2 * M1
    */
   interpolateBezier(ctx, m0, p1, m1) {
-    // 2차 베지어 곡선 호 길이 근사치
     const approxDist = Math.hypot(p1.x - m0.x, p1.y - m0.y) + Math.hypot(m1.x - p1.x, m1.y - p1.y);
     const avgPressure = (m0.pressure + p1.pressure + m1.pressure) / 3;
-    const size = this.calcEffectiveSize(avgPressure);
+    const spacingRatio = this.brushManager.getSpacingRatio(this.tool);
+    const size = this.baseSize * (0.3 + avgPressure * 0.7);
 
-    const step = Math.max(1.0, size * this.spacingRatio);
+    const step = Math.max(1.0, size * spacingRatio);
     const steps = Math.max(2, Math.ceil(approxDist / step));
 
     for (let i = 1; i <= steps; i++) {
@@ -290,46 +266,27 @@ export class BezierStampEngine {
       const x = invT * invT * m0.x + 2 * invT * t * p1.x + t * t * m1.x;
       const y = invT * invT * m0.y + 2 * invT * t * p1.y + t * t * m1.y;
       const pressure = invT * m0.pressure + t * m1.pressure;
+      const pt = {
+        tiltX: invT * m0.tiltX + t * m1.tiltX,
+        tiltY: invT * m0.tiltY + t * m1.tiltY
+      };
 
-      this.renderStamp(ctx, x, y, pressure);
+      this.renderStamp(ctx, x, y, pressure, pt);
     }
   }
 
   /**
-   * 스탬프 단일 렌더링 (가우시안 팁 & 지우개 destination-out 처리)
+   * 브러시 전략에 스탬프 렌더링 위임
    */
-  renderStamp(ctx, x, y, pressure) {
-    const size = this.calcEffectiveSize(pressure);
-    const alpha = this.calcEffectiveAlpha(pressure);
-    const radius = size / 2;
-    if (radius <= 0.2) return;
-
-    ctx.save();
-
-    if (this.tool === 'eraser') {
-      // 지우개 모드: destination-out으로 알파를 부드럽게 깎아냄
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.globalAlpha = Math.min(1.0, alpha * 2.2);
-
-      const grad = ctx.createRadialGradient(x, y, radius * 0.2, x, y, radius);
-      grad.addColorStop(0, 'rgba(0,0,0,1)');
-      grad.addColorStop(0.7, 'rgba(0,0,0,0.8)');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // 수채화 브러시 모드: 사전 생성된 가우시안 팁 오프스크린 고속 스탬핑
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = alpha;
-
-      const tipCanvas = this.getGaussianTip(this.color);
-      ctx.drawImage(tipCanvas, x - radius, y - radius, size, size);
-    }
-
-    ctx.restore();
+  renderStamp(ctx, x, y, pressure, pt = {}) {
+    this.brushManager.renderStamp(ctx, x, y, pressure, {
+      tool: this.tool,
+      color: this.color,
+      baseSize: this.baseSize,
+      baseOpacity: this.baseOpacity,
+      tiltX: pt.tiltX || 0,
+      tiltY: pt.tiltY || 0
+    });
   }
 
   /**
@@ -348,7 +305,7 @@ class AtelieraApp {
   constructor() {
     this.canvasEl = document.getElementById('webgl-canvas');
     this.dualCanvas = new DualCanvasManager(2048);
-    this.brush = new BezierStampEngine(this.dualCanvas);
+    this.brush = new BezierBrushEngine(this.dualCanvas);
 
     // 규격화된 Artwork 객체 및 Redo 스택
     this.currentArtwork = createArtwork(2048, 2048);
@@ -465,7 +422,7 @@ class AtelieraApp {
   }
 
   /* ==========================================================================
-     4. 고정밀 입력 수집 파이프라인 (e.getCoalescedEvents() 대응)
+     4. 고정밀 입력 수집 파이프라인 (e.getCoalescedEvents() 대응 & 틸트 지원)
      ========================================================================== */
   bindPointerEvents() {
     this.canvasEl.addEventListener('pointerdown', this.onPointerDown.bind(this));
@@ -509,6 +466,8 @@ class AtelieraApp {
       this.isDrawing = true;
       const coords = this.dualCanvas.uvToCanvasCoords(hit.uv);
       const pressure = this.resolvePressure(e, coords, null, 1);
+      const tiltX = e.tiltX || 0;
+      const tiltY = e.tiltY || 0;
 
       this.currentStroke = createStroke({
         tool: this.brush.tool,
@@ -517,7 +476,7 @@ class AtelieraApp {
         opacity: this.brush.baseOpacity
       });
 
-      const firstPt = createPoint(coords.x, coords.y, pressure, tInputStart);
+      const firstPt = createPoint(coords.x, coords.y, pressure, tInputStart, tiltX, tiltY);
       this.currentStroke.points.push(firstPt);
 
       this.brush.startStroke(firstPt);
@@ -550,8 +509,10 @@ class AtelieraApp {
         const coords = this.dualCanvas.uvToCanvasCoords(hit.uv);
         const dt = Math.max(1, tInputStart - this.lastPointerTime);
         const pressure = this.resolvePressure(subEvent, coords, this.lastPointerPos, dt);
+        const tiltX = subEvent.tiltX || 0;
+        const tiltY = subEvent.tiltY || 0;
 
-        const pt = createPoint(coords.x, coords.y, pressure, tInputStart);
+        const pt = createPoint(coords.x, coords.y, pressure, tInputStart, tiltX, tiltY);
 
         if (this.currentStroke) {
           this.currentStroke.points.push(pt);
@@ -575,7 +536,7 @@ class AtelieraApp {
 
     if (this.currentStroke && this.currentStroke.points.length > 0) {
       this.currentArtwork.strokes.push(this.currentStroke);
-      this.undoneStrokes = []; // 새 작업 시 Redo 스택 클리어
+      this.undoneStrokes = [];
       this.updateHUDStats();
       this.updateHistoryButtons();
     }
@@ -593,7 +554,7 @@ class AtelieraApp {
   }
 
   /* ==========================================================================
-     5. 실제 물감 조색 패드 (Color Mixing Pad) 구현
+     5. 드래그 이동 가능한 실제 물감 조색 패드 (Color Mixing Pad)
      ========================================================================== */
   initMixingPad() {
     const popover = document.getElementById('mixing-palette-popover');
@@ -607,13 +568,11 @@ class AtelieraApp {
     if (!mixingCanvas) return;
     const mCtx = mixingCanvas.getContext('2d', { willReadFrequently: true });
 
-    // 조색 캔버스 도자기 백자 텍스처 초기화
     const resetMixingCanvas = () => {
       mCtx.save();
       mCtx.fillStyle = '#FBF8F2';
       mCtx.fillRect(0, 0, mixingCanvas.width, mixingCanvas.height);
 
-      // 은은한 오목한 접시 그림자
       const grad = mCtx.createRadialGradient(
         mixingCanvas.width / 2, mixingCanvas.height / 2, 20,
         mixingCanvas.width / 2, mixingCanvas.height / 2, 160
@@ -627,7 +586,6 @@ class AtelieraApp {
 
     resetMixingCanvas();
 
-    // 토글 팝오버
     toggleBtn.addEventListener('click', () => {
       const isActive = popover.classList.toggle('active');
       toggleBtn.classList.toggle('active', isActive);
@@ -644,7 +602,7 @@ class AtelieraApp {
       resetMixingCanvas();
     });
 
-    // --- 헤더 드래그 이동 로직 (Draggable Floating Panel) ---
+    // 드래그 이동 처리
     let isDraggingPanel = false;
     let dragStartX = 0;
     let dragStartY = 0;
@@ -664,7 +622,6 @@ class AtelieraApp {
         dragStartX = e.clientX;
         dragStartY = e.clientY;
 
-        // 고정 위치를 픽셀 절대 좌표로 전환
         popover.style.right = 'auto';
         popover.style.bottom = 'auto';
         popover.style.left = `${panelInitialLeft}px`;
@@ -682,7 +639,6 @@ class AtelieraApp {
         let nextLeft = panelInitialLeft + dx;
         let nextTop = panelInitialTop + dy;
 
-        // 화면 밖으로 이탈 방지 클램핑
         const padW = popover.offsetWidth || 340;
         const padH = popover.offsetHeight || 240;
         nextLeft = Math.max(10, Math.min(window.innerWidth - padW - 10, nextLeft));
@@ -730,14 +686,12 @@ class AtelieraApp {
       mCtx.fill();
       mCtx.restore();
 
-      // 드래그 또는 클릭 지점의 혼합 픽셀 색상 실시간 채취(Eyedropper Pick)
       const pixel = mCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
       if (pixel[3] > 10) {
         const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1)}`;
         this.brush.color = hex;
         if (previewChip) previewChip.style.background = hex;
 
-        // 메인 컬러 팔레트 active 상태 갱신
         const swatches = document.querySelectorAll('.color-swatch');
         swatches.forEach(s => s.classList.remove('active'));
       }
@@ -789,23 +743,45 @@ class AtelieraApp {
   }
 
   initUI() {
-    // 도구 전환 (브러시 ↔ 지우개)
-    const btnBrush = document.getElementById('btn-tool-brush');
-    const btnEraser = document.getElementById('btn-tool-eraser');
+    // 4종 브러시 + 지우개 탭 전환
+    const toolTabs = document.querySelectorAll('.btn-tool-tab');
+    const sizeInput = document.getElementById('brush-size');
+    const sizeLabel = document.getElementById('label-brush-size');
+    const opacityInput = document.getElementById('brush-opacity');
+    const opacityLabel = document.getElementById('label-brush-opacity');
 
-    if (btnBrush && btnEraser) {
-      btnBrush.addEventListener('click', () => {
-        btnBrush.classList.add('active');
-        btnEraser.classList.remove('active');
-        this.brush.tool = 'brush';
-      });
+    toolTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        toolTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
 
-      btnEraser.addEventListener('click', () => {
-        btnEraser.classList.add('active');
-        btnBrush.classList.remove('active');
-        this.brush.tool = 'eraser';
+        const toolName = tab.getAttribute('data-tool');
+        const config = this.brush.setTool(toolName);
+
+        // 슬라이더 범위 및 값 자동 동기화
+        sizeInput.min = config.minSize;
+        sizeInput.max = config.maxSize;
+        sizeInput.value = config.defaultSize;
+        sizeLabel.textContent = `${config.defaultSize}px`;
+
+        const opPercent = Math.round(config.defaultOpacity * 100);
+        opacityInput.value = opPercent;
+        opacityLabel.textContent = `${opPercent}%`;
       });
-    }
+    });
+
+    // 슬라이더 (크기 & 불투명도)
+    sizeInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      sizeLabel.textContent = `${val}px`;
+      this.brush.baseSize = val;
+    });
+
+    opacityInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      opacityLabel.textContent = `${val}%`;
+      this.brush.baseOpacity = val / 100;
+    });
 
     // 상단 액션 버튼
     document.getElementById('btn-clear').addEventListener('click', () => this.clearCanvas());
@@ -822,11 +798,11 @@ class AtelieraApp {
         swatch.classList.add('active');
         const color = swatch.getAttribute('data-color');
         this.brush.color = color;
-        // 지우개 모드였다면 자동으로 브러시 모드로 복귀
-        if (this.brush.tool === 'eraser' && btnBrush && btnEraser) {
-          btnBrush.classList.add('active');
-          btnEraser.classList.remove('active');
-          this.brush.tool = 'brush';
+
+        // 지우개 모드였다면 마지막 브러시 모드로 자동 복귀
+        if (this.brush.tool === 'eraser') {
+          const watercolorTab = document.querySelector('[data-tool="watercolor"]');
+          if (watercolorTab) watercolorTab.click();
         }
       });
     });
@@ -839,23 +815,6 @@ class AtelieraApp {
         this.brush.color = e.target.value;
       });
     }
-
-    // 슬라이더 (크기 & 불투명도)
-    const sizeInput = document.getElementById('brush-size');
-    const sizeLabel = document.getElementById('label-brush-size');
-    sizeInput.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      sizeLabel.textContent = `${val}px`;
-      this.brush.baseSize = val;
-    });
-
-    const opacityInput = document.getElementById('brush-opacity');
-    const opacityLabel = document.getElementById('label-brush-opacity');
-    opacityInput.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      opacityLabel.textContent = `${val}%`;
-      this.brush.baseOpacity = val / 100;
-    });
 
     this.updateHistoryButtons();
   }
@@ -881,9 +840,6 @@ class AtelieraApp {
     this.updateHistoryButtons();
   }
 
-  /**
-   * 실행 취소 (Undo)
-   */
   undo() {
     if (this.isDrawingBlocked || this.currentArtwork.strokes.length === 0) return;
 
@@ -895,9 +851,6 @@ class AtelieraApp {
     this.updateHistoryButtons();
   }
 
-  /**
-   * 다시 실행 (Redo)
-   */
   redo() {
     if (this.isDrawingBlocked || this.undoneStrokes.length === 0) return;
 
@@ -910,7 +863,7 @@ class AtelieraApp {
   }
 
   /**
-   * 전체 스트로크 스택을 순서대로 백그라운드 캔버스에 재렌더링
+   * 전체 스트로크 스택을 각 브러시 전략에 맞춰 재렌더링
    */
   redrawAllStrokes() {
     this.dualCanvas.clearAll();
@@ -920,19 +873,18 @@ class AtelieraApp {
       const pts = stroke.points;
       if (!pts || pts.length === 0) continue;
 
-      // 도구별 상태 백업
       const prevTool = this.brush.tool;
       const prevColor = this.brush.color;
       const prevSize = this.brush.baseSize;
       const prevOpacity = this.brush.baseOpacity;
 
-      this.brush.tool = stroke.tool || 'brush';
+      this.brush.tool = stroke.tool || 'watercolor';
       this.brush.color = stroke.color || '#1B3B6F';
       this.brush.baseSize = stroke.size || 32;
       this.brush.baseOpacity = stroke.opacity || 0.12;
 
       if (pts.length === 1) {
-        this.brush.renderStamp(ctx, pts[0].x, pts[0].y, pts[0].pressure);
+        this.brush.renderStamp(ctx, pts[0].x, pts[0].y, pts[0].pressure, pts[0]);
       } else if (pts.length === 2) {
         this.brush.interpolateLinear(ctx, pts[0], pts[1]);
       } else {
@@ -940,8 +892,20 @@ class AtelieraApp {
           const p0 = pts[i - 2];
           const p1 = pts[i - 1];
           const p2 = pts[i];
-          const m0 = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2, pressure: (p0.pressure + p1.pressure) / 2 };
-          const m1 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2, pressure: (p1.pressure + p2.pressure) / 2 };
+          const m0 = {
+            x: (p0.x + p1.x) / 2,
+            y: (p0.y + p1.y) / 2,
+            pressure: (p0.pressure + p1.pressure) / 2,
+            tiltX: (p0.tiltX + p1.tiltX) / 2,
+            tiltY: (p0.tiltY + p1.tiltY) / 2
+          };
+          const m1 = {
+            x: (p1.x + p2.x) / 2,
+            y: (p1.y + p2.y) / 2,
+            pressure: (p1.pressure + p2.pressure) / 2,
+            tiltX: (p1.tiltX + p2.tiltX) / 2,
+            tiltY: (p1.tiltY + p2.tiltY) / 2
+          };
           this.brush.interpolateBezier(ctx, m0, p1, m1);
         }
       }
@@ -989,22 +953,34 @@ class AtelieraApp {
       const prevSize = this.brush.baseSize;
       const prevOpacity = this.brush.baseOpacity;
 
-      this.brush.tool = stroke.tool || 'brush';
+      this.brush.tool = stroke.tool || 'watercolor';
       this.brush.color = stroke.color || '#1B3B6F';
       this.brush.baseSize = stroke.size || 32;
       this.brush.baseOpacity = stroke.opacity || 0.12;
 
       for (let i = pointIdx; i < endIdx; i++) {
         if (i === 0) {
-          this.brush.renderStamp(ctx, pts[0].x, pts[0].y, pts[0].pressure);
+          this.brush.renderStamp(ctx, pts[0].x, pts[0].y, pts[0].pressure, pts[0]);
         } else if (i === 1) {
           this.brush.interpolateLinear(ctx, pts[0], pts[1]);
         } else {
           const p0 = pts[i - 2];
           const p1 = pts[i - 1];
           const p2 = pts[i];
-          const m0 = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2, pressure: (p0.pressure + p1.pressure) / 2 };
-          const m1 = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2, pressure: (p1.pressure + p2.pressure) / 2 };
+          const m0 = {
+            x: (p0.x + p1.x) / 2,
+            y: (p0.y + p1.y) / 2,
+            pressure: (p0.pressure + p1.pressure) / 2,
+            tiltX: (p0.tiltX + p1.tiltX) / 2,
+            tiltY: (p0.tiltY + p1.tiltY) / 2
+          };
+          const m1 = {
+            x: (p1.x + p2.x) / 2,
+            y: (p1.y + p2.y) / 2,
+            pressure: (p1.pressure + p2.pressure) / 2,
+            tiltX: (p1.tiltX + p2.tiltX) / 2,
+            tiltY: (p1.tiltY + p2.tiltY) / 2
+          };
           this.brush.interpolateBezier(ctx, m0, p1, m1);
         }
       }
