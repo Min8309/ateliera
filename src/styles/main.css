@@ -3,7 +3,7 @@
  * @description 아틀리에라(Ateliera) 프리미엄 글래스모피즘 UI 스타일시트
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
 
 :root {
   --bg-color: #0d0e12;
@@ -14,6 +14,8 @@
   --text-muted: #8b92a4;
   --accent: #5e81f4;
   --accent-glow: rgba(94, 129, 244, 0.4);
+  --green: #4ade80;
+  --green-glow: rgba(74, 222, 128, 0.4);
   --gold: #d8b26e;
   --gold-glow: rgba(216, 178, 110, 0.45);
   --danger: #e05656;
@@ -85,6 +87,110 @@ body, html {
   color: var(--text-muted);
   font-weight: 400;
   margin-top: 2px;
+}
+
+/* ==========================================================================
+   실시간 지연 & 성능 디버그 오버레이 (Performance HUD)
+   ========================================================================== */
+.performance-hud {
+  position: absolute;
+  top: 86px;
+  left: 24px;
+  z-index: 10;
+  background: rgba(16, 18, 25, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  min-width: 210px;
+  transition: all 0.25s ease;
+}
+
+.hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hud-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--green-glow);
+  animation: pulseDot 1.4s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.hud-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: #b8c1d5;
+  flex: 1;
+}
+
+.hud-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.hud-toggle-btn:hover {
+  color: #ffffff;
+}
+
+.hud-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud-grid.collapsed {
+  display: none;
+}
+
+.hud-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hud-label {
+  font-size: 0.64rem;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+}
+
+.hud-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.hud-value small {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+.hud-item.highlight .hud-value {
+  color: #38ef7d;
+  text-shadow: 0 0 10px rgba(56, 239, 125, 0.4);
 }
 
 /* 화면 우측 상단 액션 컨트롤 패널 */

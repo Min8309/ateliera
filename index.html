@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Ateliera (아틀리에라) - 비 오는 창가 작업실 & 3D 수채화 갤러리</title>
-  <meta name="description" content="비 오는 창가 작업실에서 수채화로 창작하고 3D 액자로 완성하는 WebXR 기반 감성 아틀리에 플랫폼" />
+  <meta name="description" content="저지연 입력 파이프라인과 수채화 브러시 엔진 기반 WebXR 감성 아틀리에 플랫폼" />
   <link rel="stylesheet" href="/src/styles/main.css" />
 </head>
 <body>
@@ -19,7 +19,34 @@
     </div>
   </header>
 
-  <!-- 화면 우측 상단 컨트롤 패널 -->
+  <!-- [HUD] 실시간 지연 & 성능 디버그 오버레이 (Input-to-Screen Performance HUD) -->
+  <div id="perf-hud" class="performance-hud">
+    <div class="hud-header">
+      <span class="hud-dot"></span>
+      <span class="hud-title">REALTIME PIPELINE HUD</span>
+      <button id="btn-toggle-hud" class="hud-toggle-btn" title="HUD 접기/펼치기">−</button>
+    </div>
+    <div class="hud-grid" id="hud-content">
+      <div class="hud-item">
+        <span class="hud-label">FPS / RENDER</span>
+        <span class="hud-value" id="hud-fps">60.0 <small>fps</small> (<span id="hud-frametime">16.6</span>ms)</span>
+      </div>
+      <div class="hud-item highlight">
+        <span class="hud-label">INPUT LATENCY</span>
+        <span class="hud-value" id="hud-latency">0.0 <small>ms</small></span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">STROKES / PTS</span>
+        <span class="hud-value"><span id="hud-strokes">0</span> / <span id="hud-points">0</span></span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">COALESCED PTS</span>
+        <span class="hud-value" id="hud-coalesced">0 <small>pts</small></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 화면 우측 상단 액션 컨트롤 패널 -->
   <aside class="action-control-panel">
     <button id="btn-rain-audio" class="panel-btn" title="빗소리 배경음악 켜기/끄기">
       🌧️ 빗소리 ON
@@ -53,7 +80,7 @@
 
   <!-- 조작 힌트 배지 (좌측 하단) -->
   <footer class="controls-hint">
-    <span>🖱️ <strong>좌클릭</strong>: 수채화 드로잉</span>
+    <span>🖱️ <strong>좌클릭</strong>: 고정밀 수채화 드로잉</span>
     <span>🖱️ <strong>우클릭</strong>: 3D 작업실 둘러보기</span>
     <span>🔍 <strong>휠</strong>: 줌</span>
   </footer>

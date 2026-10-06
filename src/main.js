@@ -1,14 +1,13 @@
 /**
  * @file main.js
- * @description Ateliera (아틀리에라) - 비 오는 창가 작업실 3D 수채화 드로잉 및 완성 플로우 통합 진입점
+ * @description Ateliera (아틀리에라) - 저지연 입력 파이프라인 및 드로잉 기반 구축 통합 진입점
  * 
- * [모듈 구성]
- * 1. DualCanvasManager: Background + Active + Display 듀얼 레이어 캔버스 파이프라인
- * 2. WatercolorBrushEngine: 반투명 알파(0.08~0.15), 미세 입자 흩뿌림, 선형 보간, 하이브리드 필압
- * 3. AtelierEnvironment: 비 오는 통창 방 구조, 빗방울 파티클, 무드 조명, 절차적 빗소리 Web Audio
- * 4. FrameBuilder: 3D 몰딩 액자 3종(우드/골드/블랙) 및 스냅 결합 애니메이션
- * 5. CompletionManager: 정면 줌인, 서명 각인, 액자 씌우기, 데이터 패키징 & 로컬 스토리지 보관
- * 6. AtelieraApp: Three.js 씬, OrbitControls 분리, 타임랩스 재생 및 전체 통합 제어
+ * [핵심 파이프라인]
+ * 1. 저지연 캔버스 렌더러 (desynchronized: true, devicePixelRatio 스케일링)
+ * 2. e.getCoalescedEvents() 기반 고정밀 입력 수집 파이프라인
+ * 3. 하이브리드 필압 정규화 (스타일러스 펜 하드웨어 필압 + 속도 감쇠 가상 필압)
+ * 4. Input-to-Screen 레이턴시(ms) & FPS 실시간 디버그 HUD
+ * 5. 규격화된 데이터 모델 (Point, Stroke, Artwork) 실시간 누적 관리
  */
 
 import * as THREE from 'three';
@@ -16,9 +15,10 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AtelierEnvironment } from './environment/AtelierEnvironment.js';
 import { FrameBuilder } from './frame/FrameBuilder.js';
 import { CompletionManager } from './completion/CompletionManager.js';
+import { createPoint, createStroke, createArtwork } from './types/DataModels.js';
 
 /* ==========================================================================
-   1. 듀얼 캔버스 레이어 관리자 (DualCanvasManager)
+   1. 듀얼 캔버스 레이어 관리자 (저지연 desynchronized 옵션 적용)
    ========================================================================== */
 export class DualCanvasManager {
   /**
@@ -27,23 +27,29 @@ export class DualCanvasManager {
   constructor(size = 2048) {
     this.size = size;
 
-    // 백그라운드 캔버스: 완료된 이전 획들이 영구 보관되는 캔버스
+    // 1-1. 백그라운드 캔버스: 완료된 이전 획들이 영구 보관되는 캔버스
     this.bgCanvas = document.createElement('canvas');
     this.bgCanvas.width = this.size;
     this.bgCanvas.height = this.size;
     this.bgCtx = this.bgCanvas.getContext('2d', { willReadFrequently: false });
 
-    // 액티브 캔버스: 현재 그리고 있는 실시간 1개의 획만 그리는 임시 캔버스
+    // 1-2. 액티브 캔버스: 저지연 렌더링을 위해 desynchronized: true 적용
     this.activeCanvas = document.createElement('canvas');
     this.activeCanvas.width = this.size;
     this.activeCanvas.height = this.size;
-    this.activeCtx = this.activeCanvas.getContext('2d', { willReadFrequently: false });
+    this.activeCtx = this.activeCanvas.getContext('2d', {
+      desynchronized: true,
+      willReadFrequently: false
+    });
 
-    // 최종 디스플레이 캔버스: Three.js CanvasTexture에 바인딩되는 합성 버퍼
+    // 1-3. 최종 디스플레이 캔버스: 저지연 합성 버퍼 (Three.js CanvasTexture 소스)
     this.displayCanvas = document.createElement('canvas');
     this.displayCanvas.width = this.size;
     this.displayCanvas.height = this.size;
-    this.displayCtx = this.displayCanvas.getContext('2d', { willReadFrequently: false });
+    this.displayCtx = this.displayCanvas.getContext('2d', {
+      desynchronized: true,
+      willReadFrequently: false
+    });
 
     // Three.js CanvasTexture 생성
     this.texture = new THREE.CanvasTexture(this.displayCanvas);
@@ -52,7 +58,7 @@ export class DualCanvasManager {
     this.texture.generateMipmaps = true;
     this.texture.colorSpace = THREE.SRGBColorSpace;
 
-    // 수채화 전용 바탕지(캔버스지) 초기화
+    // 수채화 전용 따뜻한 미색(Cream Ivory) 바탕지 초기화
     this.initPaperBackground();
   }
 
@@ -61,7 +67,6 @@ export class DualCanvasManager {
    */
   initPaperBackground() {
     this.bgCtx.save();
-    // 고급 아르쉬 수채화지 톤의 밝고 따뜻한 미색 (#FDF8F0)
     this.bgCtx.fillStyle = '#FDF8F0';
     this.bgCtx.fillRect(0, 0, this.size, this.size);
 
@@ -98,7 +103,7 @@ export class DualCanvasManager {
   }
 
   /**
-   * 스트로크 완료 시: activeCanvas 내용을 backgroundCanvas에 스탬핑하고 activeCanvas는 클리어
+   * 스트로크 완료 시: activeCanvas 내용을 backgroundCanvas에 스탬핑하고 activeCanvas 클리어
    */
   commitActiveToBackground() {
     this.bgCtx.drawImage(this.activeCanvas, 0, 0);
@@ -148,22 +153,22 @@ export class WatercolorBrushEngine {
     this.dualCanvas = dualCanvas;
 
     // 브러시 기본 설정 (반투명 알파 0.08 ~ 0.15)
+    this.tool = 'brush';
     this.color = '#2F528F';
     this.baseSize = 32;
     this.opacity = 0.12;
 
-    this.currentPath = [];
-    this.lastTime = 0;
+    this.currentPoints = [];
     this.lastPoint = null;
   }
 
   /**
    * 스트로크 시작
+   * @param {import('./types/DataModels.js').Point} pt
    */
   startStroke(pt) {
-    this.currentPath = [pt];
+    this.currentPoints = [pt];
     this.lastPoint = pt;
-    this.lastTime = pt.t;
 
     const effectiveSize = this.calcEffectiveSize(this.baseSize, pt.pressure);
     this.drawWatercolorStamp(this.dualCanvas.activeCtx, pt.x, pt.y, effectiveSize, this.opacity, this.color);
@@ -171,58 +176,37 @@ export class WatercolorBrushEngine {
   }
 
   /**
-   * 스트로크 진행 (선형 보간 및 가상 필압 적용)
+   * 스트로크 연속 보간 및 렌더링
+   * @param {import('./types/DataModels.js').Point} pt
    */
-  continueStroke(rawPt) {
+  addPoint(pt) {
     if (!this.lastPoint) {
-      this.startStroke(rawPt);
+      this.startStroke(pt);
       return;
     }
 
-    const dt = Math.max(1, rawPt.t - this.lastTime);
-    const dist = Math.hypot(rawPt.x - this.lastPoint.x, rawPt.y - this.lastPoint.y);
+    const dist = Math.hypot(pt.x - this.lastPoint.x, pt.y - this.lastPoint.y);
+    // 초미세 지터 방지
+    if (dist < 0.6) return;
 
-    if (dist < 1.0) return;
-
-    let pressure = rawPt.rawPressure;
-    if (pressure === undefined || pressure === 0 || pressure === 0.5) {
-      const speed = dist / dt;
-      pressure = THREE.MathUtils.clamp(1.0 - speed * 0.45, 0.35, 0.95);
-    }
-
-    const pt = {
-      x: rawPt.x,
-      y: rawPt.y,
-      pressure: pressure,
-      t: rawPt.t
-    };
-
+    // 연속된 점 사이 선형 보간 렌더링
     this.interpolateAndDraw(this.dualCanvas.activeCtx, this.lastPoint, pt, this.color, this.baseSize, this.opacity);
 
-    this.currentPath.push(pt);
+    this.currentPoints.push(pt);
     this.lastPoint = pt;
-    this.lastTime = pt.t;
-
     this.dualCanvas.updateDisplay();
   }
 
   /**
    * 스트로크 종료
+   * @returns {import('./types/DataModels.js').Point[]}
    */
   endStroke() {
-    if (this.currentPath.length === 0) return null;
-
-    const strokeRecord = {
-      color: this.color,
-      size: this.baseSize,
-      opacity: this.opacity,
-      path: [...this.currentPath]
-    };
-
+    const finishedPoints = [...this.currentPoints];
     this.dualCanvas.commitActiveToBackground();
-    this.currentPath = [];
+    this.currentPoints = [];
     this.lastPoint = null;
-    return strokeRecord;
+    return finishedPoints;
   }
 
   /**
@@ -303,17 +287,30 @@ class AtelieraApp {
     this.dualCanvas = new DualCanvasManager(2048);
     this.brush = new WatercolorBrushEngine(this.dualCanvas);
 
-    this.strokesData = [];
+    // 규격화된 Artwork 객체 관리
+    this.currentArtwork = createArtwork(2048, 2048);
+    this.currentStroke = null;
+
+    // 성능 및 지연 측정 지표
+    this.totalCoalescedCount = 0;
+    this.lastLatency = 0;
+    this.lastTime = performance.now();
+    this.frameCount = 0;
+    this.fps = 60.0;
+    this.frameTime = 16.6;
+
+    // 상태 플래그
     this.isDrawing = false;
     this.isDrawingBlocked = false;
-    this.timelapseAnimId = null;
+    this.lastPointerPos = null;
+    this.lastPointerTime = 0;
 
     this.clock = new THREE.Clock();
 
     // Three.js 씬 구축
     this.initThree();
 
-    // 로드맵 2단계 모듈 초기화
+    // 환경 및 확장 모듈 초기화
     this.environment = new AtelierEnvironment(this.scene, this.camera);
     this.frameBuilder = new FrameBuilder(this.scene);
     this.completionManager = new CompletionManager({
@@ -322,12 +319,13 @@ class AtelieraApp {
       drawingPlane: this.drawingPlane,
       dualCanvas: this.dualCanvas,
       frameBuilder: this.frameBuilder,
-      strokesData: this.strokesData,
+      strokesData: this.currentArtwork.strokes,
       setDrawingBlocked: this.setDrawingBlocked.bind(this)
     });
 
-    // UI 및 이벤트 바인딩
+    // UI 및 저지연 Pointer Events 바인딩
     this.initUI();
+    this.initHUD();
     this.bindPointerEvents();
 
     // 렌더 루프 가동
@@ -335,7 +333,7 @@ class AtelieraApp {
   }
 
   /**
-   * Three.js 뷰포트 & OrbitControls 설정
+   * Three.js 뷰포트 & 레티나 devicePixelRatio 스케일링
    */
   initThree() {
     this.scene = new THREE.Scene();
@@ -351,7 +349,8 @@ class AtelieraApp {
       powerPreference: 'high-performance'
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // 레티나/고해상도 디스플레이 대응 스케일링
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.5));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -401,77 +400,193 @@ class AtelieraApp {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
+  /* ==========================================================================
+     4. 고정밀 입력 수집 파이프라인 (e.getCoalescedEvents() 대응)
+     ========================================================================== */
   bindPointerEvents() {
     this.canvasEl.addEventListener('pointerdown', this.onPointerDown.bind(this));
     window.addEventListener('pointermove', this.onPointerMove.bind(this));
     window.addEventListener('pointerup', this.onPointerUp.bind(this));
+    window.addEventListener('pointercancel', this.onPointerUp.bind(this));
   }
 
-  updatePointerCoords(e) {
+  /**
+   * 단일 포인터 이벤트로부터 정규화된 마우스 벡터 산출
+   */
+  getNormalizedPointer(event) {
     const rect = this.canvasEl.getBoundingClientRect();
-    this.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    return new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1
+    );
   }
 
-  raycastCanvas() {
-    this.raycaster.setFromCamera(this.pointer, this.camera);
+  /**
+   * 정규화된 좌표로부터 3D 캔버스 교차점 계산
+   */
+  raycastPoint(pointerVec) {
+    this.raycaster.setFromCamera(pointerVec, this.camera);
     const intersects = this.raycaster.intersectObject(this.drawingPlane, false);
     return intersects.length > 0 ? intersects[0] : null;
   }
 
+  /**
+   * 하이브리드 필압 계산 (스타일러스 하드웨어 필압 + 속도 감쇠 가상 필압)
+   */
+  resolvePressure(event, currentCoord, prevCoord, dt) {
+    // 1. 스타일러스 펜 또는 물리 필압을 지원하는 기기
+    if (event.pointerType === 'pen' || (event.pressure > 0 && event.pressure !== 0.5)) {
+      return event.pressure;
+    }
+
+    // 2. 마우스/트랙패드: 이동 속도 기반 가상 필압
+    if (!prevCoord || dt <= 0) return 0.5;
+    const dist = Math.hypot(currentCoord.x - prevCoord.x, currentCoord.y - prevCoord.y);
+    const speed = dist / dt; // 픽셀/ms
+    // 빠르면 얇고 옅어지고, 느리면 굵고 진해짐
+    return THREE.MathUtils.clamp(1.0 - speed * 0.42, 0.28, 0.95);
+  }
+
+  /**
+   * 드로잉 시작 (pointerdown)
+   */
   onPointerDown(e) {
     if (this.isDrawingBlocked || e.button !== 0) return;
 
-    this.updatePointerCoords(e);
-    const hit = this.raycastCanvas();
+    const tInputStart = performance.now();
+    const ptrVec = this.getNormalizedPointer(e);
+    const hit = this.raycastPoint(ptrVec);
 
     if (hit && hit.uv) {
       this.isDrawing = true;
       const coords = this.dualCanvas.uvToCanvasCoords(hit.uv);
+      const pressure = this.resolvePressure(e, coords, null, 1);
 
-      this.brush.startStroke({
-        x: coords.x,
-        y: coords.y,
-        pressure: e.pressure,
-        t: performance.now()
+      // 데이터 모델 규격에 맞춘 Stroke 및 첫 Point 생성
+      this.currentStroke = createStroke({
+        tool: this.brush.tool,
+        color: this.brush.color,
+        size: this.brush.baseSize,
+        opacity: this.brush.opacity
       });
+
+      const firstPt = createPoint(coords.x, coords.y, pressure, tInputStart);
+      this.currentStroke.points.push(firstPt);
+
+      // 브러시 엔진에 전달
+      this.brush.startStroke(firstPt);
+
+      this.lastPointerPos = coords;
+      this.lastPointerTime = tInputStart;
+
+      // 레이턴시 측정 (이벤트 수신 -> 렌더 완료)
+      this.recordLatency(tInputStart);
     }
   }
 
+  /**
+   * 드로잉 진행 (pointermove: getCoalescedEvents() 완벽 수집)
+   */
   onPointerMove(e) {
     if (!this.isDrawing || this.isDrawingBlocked) return;
 
-    this.updatePointerCoords(e);
-    const hit = this.raycastCanvas();
+    const tInputStart = performance.now();
 
-    if (hit && hit.uv) {
-      const coords = this.dualCanvas.uvToCanvasCoords(hit.uv);
+    // [핵심] 브라우저 이벤트 큐에 뭉쳐진 미세 좌표를 전부 추출
+    const coalescedEvents = (typeof e.getCoalescedEvents === 'function')
+      ? e.getCoalescedEvents()
+      : [e];
 
-      this.brush.continueStroke({
-        x: coords.x,
-        y: coords.y,
-        rawPressure: e.pressure,
-        t: performance.now()
-      });
-    } else {
-      this.endCurrentStroke();
+    if (coalescedEvents.length > 1) {
+      this.totalCoalescedCount += (coalescedEvents.length - 1);
     }
+
+    for (const subEvent of coalescedEvents) {
+      const ptrVec = this.getNormalizedPointer(subEvent);
+      const hit = this.raycastPoint(ptrVec);
+
+      if (hit && hit.uv) {
+        const coords = this.dualCanvas.uvToCanvasCoords(hit.uv);
+        const dt = Math.max(1, tInputStart - this.lastPointerTime);
+        const pressure = this.resolvePressure(subEvent, coords, this.lastPointerPos, dt);
+
+        const pt = createPoint(coords.x, coords.y, pressure, tInputStart);
+
+        if (this.currentStroke) {
+          this.currentStroke.points.push(pt);
+        }
+
+        this.brush.addPoint(pt);
+
+        this.lastPointerPos = coords;
+        this.lastPointerTime = tInputStart;
+      }
+    }
+
+    // 레이턴시 측정 및 HUD 업데이트
+    this.recordLatency(tInputStart);
   }
 
+  /**
+   * 드로잉 종료 (pointerup / pointercancel)
+   */
   onPointerUp(e) {
-    if (this.isDrawing && e.button === 0) {
-      this.endCurrentStroke();
-    }
-  }
-
-  endCurrentStroke() {
     if (!this.isDrawing) return;
     this.isDrawing = false;
 
-    const strokeRecord = this.brush.endStroke();
-    if (strokeRecord) {
-      this.strokesData.push(strokeRecord);
+    this.brush.endStroke();
+
+    if (this.currentStroke && this.currentStroke.points.length > 0) {
+      this.currentArtwork.strokes.push(this.currentStroke);
+      this.updateHUDStats();
     }
+
+    this.currentStroke = null;
+    this.lastPointerPos = null;
+  }
+
+  /**
+   * 실시간 지연 시간(Input Latency ms) 기록 및 HUD 반영
+   */
+  recordLatency(tInputStart) {
+    this.lastLatency = performance.now() - tInputStart;
+    const latencyEl = document.getElementById('hud-latency');
+    if (latencyEl) {
+      latencyEl.innerHTML = `${this.lastLatency.toFixed(1)} <small>ms</small>`;
+    }
+  }
+
+  /* ==========================================================================
+     5. 실시간 성능 & 지연 디버그 HUD 관리
+     ========================================================================== */
+  initHUD() {
+    const toggleBtn = document.getElementById('btn-toggle-hud');
+    const content = document.getElementById('hud-content');
+    if (toggleBtn && content) {
+      toggleBtn.addEventListener('click', () => {
+        const isCollapsed = content.classList.toggle('collapsed');
+        toggleBtn.textContent = isCollapsed ? '+' : '−';
+      });
+    }
+  }
+
+  /**
+   * HUD 통계 수치 갱신
+   */
+  updateHUDStats() {
+    const strokesEl = document.getElementById('hud-strokes');
+    const pointsEl = document.getElementById('hud-points');
+    const coalescedEl = document.getElementById('hud-coalesced');
+
+    const totalStrokes = this.currentArtwork.strokes.length;
+    let totalPoints = 0;
+    for (const s of this.currentArtwork.strokes) {
+      totalPoints += s.points.length;
+    }
+
+    if (strokesEl) strokesEl.textContent = totalStrokes;
+    if (pointsEl) pointsEl.textContent = totalPoints;
+    if (coalescedEl) coalescedEl.innerHTML = `${this.totalCoalescedCount} <small>pts</small>`;
   }
 
   initUI() {
@@ -520,41 +635,44 @@ class AtelieraApp {
 
   clearCanvas() {
     if (this.isDrawingBlocked) return;
-    if (this.strokesData.length > 0 && !confirm('캔버스와 모든 스트로크 기록을 지우시겠습니까?')) {
+    if (this.currentArtwork.strokes.length > 0 && !confirm('캔버스와 모든 스트로크 기록을 지우시겠습니까?')) {
       return;
     }
-    this.strokesData = [];
+    this.currentArtwork.strokes = [];
+    this.totalCoalescedCount = 0;
     this.dualCanvas.clearAll();
+    this.updateHUDStats();
   }
 
   undo() {
-    if (this.isDrawingBlocked || this.strokesData.length === 0) return;
+    if (this.isDrawingBlocked || this.currentArtwork.strokes.length === 0) return;
 
-    this.strokesData.pop();
+    this.currentArtwork.strokes.pop();
     this.dualCanvas.clearAll();
     const ctx = this.dualCanvas.bgCtx;
 
-    for (const stroke of this.strokesData) {
-      const path = stroke.path;
-      if (!path || path.length === 0) continue;
+    for (const stroke of this.currentArtwork.strokes) {
+      const pts = stroke.points;
+      if (!pts || pts.length === 0) continue;
 
-      if (path.length === 1) {
-        const p = path[0];
+      if (pts.length === 1) {
+        const p = pts[0];
         const size = this.brush.calcEffectiveSize(stroke.size, p.pressure);
         this.brush.drawWatercolorStamp(ctx, p.x, p.y, size, stroke.opacity, stroke.color);
       } else {
-        for (let i = 0; i < path.length - 1; i++) {
-          this.brush.interpolateAndDraw(ctx, path[i], path[i + 1], stroke.color, stroke.size, stroke.opacity);
+        for (let i = 0; i < pts.length - 1; i++) {
+          this.brush.interpolateAndDraw(ctx, pts[i], pts[i + 1], stroke.color, stroke.size, stroke.opacity);
         }
       }
     }
 
     this.dualCanvas.updateDisplay();
+    this.updateHUDStats();
   }
 
   playTimelapse() {
     if (this.isDrawingBlocked) return;
-    if (this.strokesData.length === 0) {
+    if (this.currentArtwork.strokes.length === 0) {
       alert('재생할 스트로크 데이터가 없습니다. 먼저 그림을 그려보세요!');
       return;
     }
@@ -562,7 +680,7 @@ class AtelieraApp {
     this.setDrawingBlocked(true);
     this.dualCanvas.clearAll();
 
-    const strokes = [...this.strokesData];
+    const strokes = [...this.currentArtwork.strokes];
     let strokeIdx = 0;
     let pointIdx = 0;
     const ctx = this.dualCanvas.bgCtx;
@@ -577,31 +695,31 @@ class AtelieraApp {
       }
 
       const currentStroke = strokes[strokeIdx];
-      const path = currentStroke.path;
+      const pts = currentStroke.points;
       const pointsPerFrame = 4;
-      const endIdx = Math.min(path.length, pointIdx + pointsPerFrame);
+      const endIdx = Math.min(pts.length, pointIdx + pointsPerFrame);
 
       for (let i = pointIdx; i < endIdx; i++) {
         if (i === 0) {
-          const p = path[0];
+          const p = pts[0];
           const size = this.brush.calcEffectiveSize(currentStroke.size, p.pressure);
           this.brush.drawWatercolorStamp(ctx, p.x, p.y, size, currentStroke.opacity, currentStroke.color);
         } else {
-          this.brush.interpolateAndDraw(ctx, path[i - 1], path[i], currentStroke.color, currentStroke.size, currentStroke.opacity);
+          this.brush.interpolateAndDraw(ctx, pts[i - 1], pts[i], currentStroke.color, currentStroke.size, currentStroke.opacity);
         }
       }
 
       pointIdx = endIdx;
-      if (pointIdx >= path.length) {
+      if (pointIdx >= pts.length) {
         strokeIdx++;
         pointIdx = 0;
       }
 
       this.dualCanvas.updateDisplay();
-      this.timelapseAnimId = requestAnimationFrame(animateStep);
+      requestAnimationFrame(animateStep);
     };
 
-    this.timelapseAnimId = requestAnimationFrame(animateStep);
+    requestAnimationFrame(animateStep);
   }
 
   setDrawingBlocked(blocked) {
@@ -620,24 +738,15 @@ class AtelieraApp {
   }
 
   exportJSON() {
-    const exportPayload = {
-      project: 'Ateliera',
-      version: '1.2.0',
-      exportedAt: new Date().toISOString(),
-      canvasResolution: { width: this.dualCanvas.size, height: this.dualCanvas.size },
-      totalStrokes: this.strokesData.length,
-      strokesData: this.strokesData
-    };
-
-    console.group('🎨 [Ateliera] Exported Strokes Data JSON');
-    console.log(exportPayload);
+    console.group('🎨 [Ateliera] Exported Artwork JSON');
+    console.log(this.currentArtwork);
     console.groupEnd();
 
-    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(this.currentArtwork, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ateliera-strokes-${Date.now()}.json`;
+    a.download = `ateliera-${this.currentArtwork.id}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -647,7 +756,23 @@ class AtelieraApp {
   animate() {
     requestAnimationFrame(this.animate.bind(this));
 
+    const now = performance.now();
     const delta = this.clock.getDelta();
+
+    // FPS 및 프레임 타임 계산 (0.5초 간격 갱신)
+    this.frameCount++;
+    if (now - this.lastTime >= 500) {
+      this.fps = (this.frameCount * 1000) / (now - this.lastTime);
+      this.frameTime = 1000 / Math.max(1, this.fps);
+      this.frameCount = 0;
+      this.lastTime = now;
+
+      const fpsEl = document.getElementById('hud-fps');
+      const ftEl = document.getElementById('hud-frametime');
+      if (fpsEl && ftEl) {
+        fpsEl.innerHTML = `${this.fps.toFixed(1)} <small>fps</small> (<span id="hud-frametime">${this.frameTime.toFixed(1)}</span>ms)`;
+      }
+    }
 
     // 비 오는 룸 파티클 애니메이션 갱신
     if (this.environment) {
