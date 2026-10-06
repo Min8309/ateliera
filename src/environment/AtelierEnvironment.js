@@ -26,9 +26,6 @@ export class AtelierEnvironment {
 
     // 3. 무드 라이팅 (창밖 쿨톤 조명 + 캔버스 웜톤 스포트라이트)
     this.setupLighting();
-
-    // 4. Web Audio API 기반 절차적 빗소리 사운드 엔진
-    this.initRainAudio();
   }
 
   /**
@@ -181,87 +178,6 @@ export class AtelierEnvironment {
     // 3. 차분하고 따뜻한 실내 주변광
     const ambLight = new THREE.AmbientLight(0x525660, 0.95);
     this.group.add(ambLight);
-  }
-
-  /**
-   * Web Audio API 절차적 빗소리 엔진 (외부 음원 의존성 제로)
-   */
-  initRainAudio() {
-    this.audioCtx = null;
-    this.isPlayingAudio = false;
-    this.gainNode = null;
-  }
-
-  /**
-   * 빗소리 재생 토글 (브라우저 정책상 사용자 상호작용 후 재생)
-   */
-  toggleRainAudio() {
-    if (!this.audioCtx) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      this.audioCtx = new AudioContextClass();
-    }
-
-    if (this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
-
-    if (this.isPlayingAudio) {
-      if (this.gainNode) {
-        this.gainNode.gain.setTargetAtTime(0, this.audioCtx.currentTime, 0.3);
-      }
-      this.isPlayingAudio = false;
-      return false;
-    } else {
-      this.startRainSoundSynthesis();
-      this.isPlayingAudio = true;
-      return true;
-    }
-  }
-
-  /**
-   * 핑크 노이즈 + 밴드패스 필터를 이용한 자연스러운 빗소리 합성
-   */
-  startRainSoundSynthesis() {
-    if (!this.audioCtx) return;
-
-    const bufferSize = this.audioCtx.sampleRate * 2; // 2초 루프 버퍼
-    const noiseBuffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-
-    // 핑크 노이즈 필터링 공식
-    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-    for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
-      b0 = 0.99886 * b0 + white * 0.0555179;
-      b1 = 0.99332 * b1 + white * 0.0750759;
-      b2 = 0.96900 * b2 + white * 0.1538520;
-      b3 = 0.86650 * b3 + white * 0.3104856;
-      b4 = 0.55000 * b4 + white * 0.5329522;
-      b5 = -0.7616 * b5 - white * 0.0168980;
-      output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.06;
-      b6 = white * 0.115926;
-    }
-
-    const whiteNoiseSource = this.audioCtx.createBufferSource();
-    whiteNoiseSource.buffer = noiseBuffer;
-    whiteNoiseSource.loop = true;
-
-    // 저역 통과 필터 (창문을 통과해 실내로 들어오는 아늑한 빗소리)
-    const lowpass = this.audioCtx.createBiquadFilter();
-    lowpass.type = 'lowpass';
-    lowpass.frequency.value = 1100;
-
-    // 게인 노드
-    this.gainNode = this.audioCtx.createGain();
-    this.gainNode.gain.setValueAtTime(0.01, this.audioCtx.currentTime);
-    this.gainNode.gain.setTargetAtTime(0.28, this.audioCtx.currentTime, 0.5);
-
-    whiteNoiseSource.connect(lowpass);
-    lowpass.connect(this.gainNode);
-    this.gainNode.connect(this.audioCtx.destination);
-
-    whiteNoiseSource.start();
-    this.currentNoiseSource = whiteNoiseSource;
   }
 
   /**

@@ -789,16 +789,6 @@ class AtelieraApp {
   }
 
   initUI() {
-    // 빗소리 토글 버튼
-    const btnRain = document.getElementById('btn-rain-audio');
-    if (btnRain) {
-      btnRain.addEventListener('click', () => {
-        const isPlaying = this.environment.toggleRainAudio();
-        btnRain.textContent = isPlaying ? '🌧️ 빗소리 OFF' : '🌧️ 빗소리 ON';
-        btnRain.classList.toggle('accent', isPlaying);
-      });
-    }
-
     // 도구 전환 (브러시 ↔ 지우개)
     const btnBrush = document.getElementById('btn-tool-brush');
     const btnEraser = document.getElementById('btn-tool-eraser');
