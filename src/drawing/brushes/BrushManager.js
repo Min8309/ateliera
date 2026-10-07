@@ -1,22 +1,28 @@
 /**
  * @file BrushManager.js
  * @description 브러시 전략 패턴(Strategy Pattern) 매니저
- * 4종 브러시(Pen, Pencil, Watercolor, Airbrush) 및 지우개(Eraser)의 렌더링 파이프라인 관리
+ * 재료별 브러시 및 지우개(Eraser)의 렌더링 파이프라인 관리
  */
 
 import { PenBrush } from './PenBrush.js';
 import { PencilBrush } from './PencilBrush.js';
 import { WatercolorBrush } from './WatercolorBrush.js';
 import { Airbrush } from './Airbrush.js';
+import { PaintBrush } from './PaintBrush.js';
+import { CharcoalBrush } from './CharcoalBrush.js';
+import { VolumeBrush } from './VolumeBrush.js';
 
 export class BrushManager {
   constructor() {
-    // 4종 브러시 전략 인스턴스 등록
+    // 재료별 브러시 전략 인스턴스 등록
     this.brushes = {
       pen: new PenBrush(),
       pencil: new PencilBrush(),
+      paint: new PaintBrush(),
+      charcoal: new CharcoalBrush(),
       watercolor: new WatercolorBrush(),
-      airbrush: new Airbrush()
+      airbrush: new Airbrush(),
+      volume: new VolumeBrush()
     };
 
     // 현재 활성화된 도구 ('pen' | 'pencil' | 'watercolor' | 'airbrush' | 'eraser')
@@ -30,7 +36,7 @@ export class BrushManager {
    * @returns {{ tool: string, defaultSize: number, defaultOpacity: number, minSize: number, maxSize: number }}
    */
   setTool(toolName) {
-    this.currentTool = toolName;
+    this.currentTool = toolName === 'eraser' || this.brushes[toolName] ? toolName : 'watercolor';
 
     if (toolName === 'eraser') {
       return {
@@ -78,14 +84,14 @@ export class BrushManager {
     const tool = options.tool || this.currentTool;
 
     if (tool === 'eraser') {
-      // 지우개 렌더링: destination-out 마스크
+      // 투명 활성 레이어에 불투명 마스크를 쌓고, 합성 단계에서 destination-out 적용
       const p = Math.max(0.01, Math.min(1.0, pressure));
       const size = options.baseSize * (0.3 + p * 0.7);
       const radius = size / 2;
       if (radius <= 0.2) return;
 
       ctx.save();
-      ctx.globalCompositeOperation = 'destination-out';
+      ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = Math.min(1.0, options.baseOpacity * 1.8);
 
       const grad = ctx.createRadialGradient(x, y, radius * 0.2, x, y, radius);
@@ -101,7 +107,7 @@ export class BrushManager {
       return;
     }
 
-    // 4종 브러시 전략에 위임
+    // 선택한 재료의 브러시 전략에 위임
     const brush = this.brushes[tool] || this.activeBrush;
     brush.renderStamp(ctx, x, y, pressure, options);
   }

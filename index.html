@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Ateliera (아틀리에라) - 비 오는 창가 작업실 & 3D 수채화 갤러리</title>
-  <meta name="description" content="중간점 베지어 곡선 보간과 조색 팔레트 기반 WebXR 감성 아틀리에 플랫폼" />
+  <title>Ateliera (아틀리에라) - 서울 한강변 작업실 & 3D 수채화 갤러리</title>
+  <meta name="description" content="한강과 서울의 낮과 밤을 바라보며 그리는 디지털 아틀리에. 캔버스 크기를 선택하고 작품을 완성하세요." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23353f3b%22/%3E%3Cpath d=%22M16 48L32 14h5l14 34h-8l-3-8H27l-3 8zm14-15h8l-4-12z%22 fill=%22%23eadbb8%22/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/src/styles/main.css" />
 </head>
-<body>
+<body data-time-of-day="day">
   <!-- Three.js WebGL 렌더링 캔버스 -->
   <canvas id="webgl-canvas"></canvas>
 
@@ -15,7 +16,7 @@
   <header class="brand-header">
     <div class="brand-badge">
       <h1 class="brand-title">🖌️ Ateliera</h1>
-      <p class="brand-subtitle">Trace to Space • 비 오는 창가 작업실</p>
+      <p class="brand-subtitle">SEOUL · 한강변 아틀리에</p>
     </div>
   </header>
 
@@ -32,7 +33,7 @@
         <span class="hud-value" id="hud-fps">60.0 <small>fps</small> (<span id="hud-frametime">16.6</span>ms)</span>
       </div>
       <div class="hud-item highlight">
-        <span class="hud-label">INPUT LATENCY</span>
+        <span class="hud-label">INPUT PROCESSING</span>
         <span class="hud-value" id="hud-latency">0.0 <small>ms</small></span>
       </div>
       <div class="hud-item">
@@ -46,16 +47,38 @@
     </div>
   </div>
 
+  <section class="studio-panel" aria-label="작업실 설정">
+    <div class="studio-heading"><span class="studio-eyebrow">YOUR RIVERSIDE STUDIO</span><span class="studio-location">서울 · 한강</span></div>
+    <h2>창가에서 보내는 시간</h2>
+    <p id="studio-description" aria-live="polite">햇살이 드는 한강변의 오후</p>
+    <div class="time-toggle" role="group" aria-label="작업실 시간대">
+      <button type="button" data-time-of-day="day" aria-pressed="true"><span aria-hidden="true">☀</span> 낮</button>
+      <button type="button" data-time-of-day="night" aria-pressed="false"><span aria-hidden="true">☾</span> 밤</button>
+    </div>
+    <div class="canvas-setting">
+      <label for="canvas-preset">캔버스 크기</label>
+      <select id="canvas-preset" aria-describedby="canvas-size-hint">
+        <option value="square">정사각형 · 2048 × 2048</option>
+        <option value="landscape">가로형 · 2560 × 1440</option>
+        <option value="portrait">세로형 · 1440 × 2560</option>
+        <option value="compact">작은 정사각형 · 1024 × 1024</option>
+      </select>
+      <span id="canvas-dimensions" role="status">2048 × 2048 px</span>
+      <p id="canvas-size-hint">크기를 바꿔도 그림은 비율을 유지해요.</p>
+      <p id="volume-brush-hint" hidden>3D 획은 캔버스 앞에 입체로 그려져요. 우클릭으로 돌려보세요. 네온 색상은 빛나는 테두리가 더해집니다.</p>
+    </div>
+  </section>
+
   <!-- 화면 우측 상단 액션 컨트롤 패널 -->
   <aside class="action-control-panel">
-    <button id="btn-clear" class="panel-btn danger" title="캔버스 및 스트로크 데이터 초기화">
-      🗑️ Clear
+    <button id="btn-clear" aria-label="캔버스 초기화" class="panel-btn danger" title="캔버스 및 스트로크 데이터 초기화">
+      <span aria-hidden="true">🗑️</span><span class="action-label">초기화</span>
     </button>
-    <button id="btn-timelapse" class="panel-btn accent" title="지금까지의 붓질 타임랩스 재생">
-      ▶ Timelapse
+    <button id="btn-timelapse" aria-label="타임랩스 재생" class="panel-btn accent" title="지금까지의 붓질 타임랩스 재생">
+      <span aria-hidden="true">▶</span><span class="action-label">타임랩스</span>
     </button>
-    <button id="btn-export" class="panel-btn" title="스트로크 데이터 JSON 다운로드">
-      💾 Export
+    <button id="btn-export" aria-label="작품 JSON 내보내기" class="panel-btn" title="스트로크 데이터 JSON 다운로드">
+      <span aria-hidden="true">💾</span><span class="action-label">내보내기</span>
     </button>
   </aside>
 
@@ -106,16 +129,21 @@
       <button class="btn-tool-tab" data-tool="pen" title="기본 펜 (경계 또렷, 정직한 굵기)">
         🖊️ 펜
       </button>
-      <button class="btn-tool-tab" data-tool="pencil" title="연필/목탄 (종이 요철 질감 & 틸트 기울기 반응)">
+      <button class="btn-tool-tab" data-tool="pencil" title="연필 (가는 흑연 결 & 필압 농도)">
         ✏️ 연필
       </button>
+      <button class="btn-tool-tab" data-tool="charcoal" title="목탄 (넓은 입자와 가루 질감)">▧ 목탄</button>
+      <button class="btn-tool-tab" data-tool="paint" title="물감 (불투명한 안료와 붓결)">🎨 물감</button>
       <button class="btn-tool-tab active" data-tool="watercolor" title="수채 브러시 (에지 번짐 & 투명도 겹침)">
         🖌️ 수채
       </button>
       <button class="btn-tool-tab" data-tool="airbrush" title="에어브러시 (부드러운 스프레이 그라데이션)">
         💨 에어
       </button>
-      <button class="btn-tool-tab" data-tool="eraser" title="수채화 지우개 (자연스럽게 깎아내기)">
+      <button class="btn-tool-tab volume-tool" data-tool="volume" title="3D 입체 브러시 · 돌출 높이와 굵기를 조절하고 우클릭으로 옆면을 확인하세요">
+        ◈ 3D 입체
+      </button>
+      <button class="btn-tool-tab" data-tool="eraser" title="2D 획은 부분 지우기 · 3D 획은 닿으면 획 전체 삭제 (Undo 가능)">
         🧹 지우개
       </button>
     </div>
@@ -146,6 +174,15 @@
       <div class="custom-picker-wrap" title="커스텀 색상 선택">
         <input type="color" id="custom-color-picker" value="#1B3B6F" />
       </div>
+      <div class="neon-palette" role="group" aria-label="형광 및 네온 색상">
+        <span class="neon-palette-label">NEON / 형광</span>
+        <button class="color-swatch neon-swatch" data-color="#D7FF00" data-neon="true" style="--swatch-color: #D7FF00; background: #D7FF00;" title="형광 옐로 라임" aria-label="형광 옐로 라임"></button>
+        <button class="color-swatch neon-swatch" data-color="#39FF14" data-neon="true" style="--swatch-color: #39FF14; background: #39FF14;" title="네온 그린" aria-label="네온 그린"></button>
+        <button class="color-swatch neon-swatch" data-color="#00F5FF" data-neon="true" style="--swatch-color: #00F5FF; background: #00F5FF;" title="네온 시안" aria-label="네온 시안"></button>
+        <button class="color-swatch neon-swatch" data-color="#FF2BD6" data-neon="true" style="--swatch-color: #FF2BD6; background: #FF2BD6;" title="네온 핑크" aria-label="네온 핑크"></button>
+        <button class="color-swatch neon-swatch" data-color="#B026FF" data-neon="true" style="--swatch-color: #B026FF; background: #B026FF;" title="네온 바이올렛" aria-label="네온 바이올렛"></button>
+        <button class="color-swatch neon-swatch" data-color="#FF6B00" data-neon="true" style="--swatch-color: #FF6B00; background: #FF6B00;" title="형광 오렌지" aria-label="형광 오렌지"></button>
+      </div>
     </div>
 
     <!-- 조색 팔레트 열기 토글 버튼 -->
@@ -155,7 +192,7 @@
       </button>
     </div>
 
-    <!-- 슬라이더 (브러시 크기 & 불투명도) -->
+    <!-- 슬라이더 (브러시 크기, 불투명도 및 3D 돌출 높이) -->
     <div class="slider-group">
       <div class="slider-item">
         <label for="brush-size" class="slider-label">크기: <span id="label-brush-size">32px</span></label>
@@ -165,6 +202,10 @@
       <div class="slider-item">
         <label for="brush-opacity" class="slider-label">농담: <span id="label-brush-opacity">12%</span></label>
         <input type="range" id="brush-opacity" min="5" max="100" value="12" />
+      </div>
+      <div class="slider-item" id="depth-control" hidden>
+        <label for="brush-depth" class="slider-label">돌출: <span id="label-brush-depth">40px</span></label>
+        <input type="range" id="brush-depth" min="0" max="160" value="40" aria-label="3D 획 돌출 높이" />
       </div>
     </div>
 

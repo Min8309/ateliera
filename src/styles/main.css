@@ -883,3 +883,111 @@ input[type="range"]::-webkit-slider-thumb:hover {
   margin-top: 2px;
   margin-bottom: 18px;
 }
+
+/* 한강변 작업실 설정 */
+.studio-panel {
+  position: absolute;
+  top: 250px;
+  left: 24px;
+  z-index: 10;
+  width: 252px;
+  padding: 20px;
+  border: 1px solid rgba(238, 222, 194, .22);
+  border-radius: 16px;
+  background: rgba(31, 35, 36, .84);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 14px 40px rgba(24, 30, 32, .16);
+}
+.studio-heading { display: flex; flex-direction: column; gap: 8px; }
+.studio-eyebrow { color: #c6ae88; font-size: .56rem; letter-spacing: 1.8px; }
+.studio-location { font-size: .72rem; color: #c2c6bf; }
+.studio-panel h2 { font-size: 1rem; font-weight: 500; margin: 9px 0 6px; letter-spacing: -.3px; }
+#studio-description { font-size: .69rem; line-height: 1.6; color: #a9b4ae; min-height: 22px; }
+.time-toggle { display: flex; gap: 4px; margin: 16px 0 20px; padding: 4px; background: rgba(0, 0, 0, .2); border-radius: 9px; }
+.time-toggle button { flex: 1; padding: 8px 10px; border: 1px solid transparent; border-radius: 6px; color: #a7afa9; background: transparent; font: inherit; font-size: .78rem; cursor: pointer; }
+.time-toggle button span { margin-right: 7px; }
+.time-toggle button[aria-pressed="true"] { color: #f3e6cd; background: rgba(211, 180, 131, .17); border-color: rgba(217, 184, 135, .32); }
+.canvas-setting { display: flex; flex-direction: column; gap: 9px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.canvas-setting label { font-size: .75rem; color: #e1e4dc; }
+.canvas-setting select { width: 100%; padding: 10px 8px; color: #e8e7de; background: #383f40; border: 1px solid rgba(255, 255, 255, .16); border-radius: 7px; font: inherit; font-size: .7rem; cursor: pointer; }
+.canvas-setting select option { background: #293033; }
+#canvas-dimensions { font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: #c6ae88; letter-spacing: .3px; }
+#canvas-size-hint { font-size: .6rem; color: #a7afa9; line-height: 1.6; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #e3bd7b; outline-offset: 3px; }
+select:disabled { opacity: .5; cursor: not-allowed; }
+body[data-time-of-day="day"] { --panel-bg: rgba(35, 41, 40, .82); --accent: #9caa8d; --accent-glow: rgba(156, 170, 141, .3); }
+.controls-hint { bottom: 110px; }
+.drawing-dock { width: max-content; max-width: calc(100vw - 48px); bottom: 24px; flex-wrap: wrap; justify-content: center; }
+.tool-mode-group, .palette-group, .mixing-btn-wrap, .slider-group, .history-btn-group { flex-shrink: 0; }
+.btn-tool-tab, .btn-mixing-toggle { white-space: nowrap; }
+.palette-group { width: 218px; }
+.finish-dock { bottom: 112px; }
+
+@media (max-width: 1100px) {
+  .drawing-dock { flex-wrap: wrap; justify-content: center; gap: 10px; width: max-content; max-width: calc(100vw - 32px); }
+  .studio-panel { width: 220px; padding: 16px; }
+  .controls-hint { display: none; }
+  .finish-dock { bottom: 150px; right: 16px; }
+}
+@media (max-width: 680px) {
+  .brand-header { top: 14px; left: 14px; }
+  .brand-badge { padding: 7px 12px; }
+  .brand-title { font-size: .95rem; }
+  .brand-subtitle { font-size: .61rem; }
+  .action-control-panel { top: 14px; right: 14px; padding: 6px; gap: 4px; }
+  .panel-btn { font-size: .85rem; padding: 7px; }
+  .action-label { display: none; }
+  .performance-hud { display: none; }
+  .studio-panel { top: 82px; left: 14px; width: 210px; padding: 12px; }
+  .studio-heading, .studio-panel h2, #canvas-size-hint { display: none; }
+  #studio-description { font-size: .62rem; }
+  .time-toggle { margin: 6px 0 10px; }
+  .time-toggle button { padding: 5px; }
+  .canvas-setting { padding-top: 9px; gap: 6px; }
+  .canvas-setting label { font-size: .65rem; }
+  .canvas-setting select { padding: 6px; font-size: .64rem; }
+  .drawing-dock { bottom: 14px; padding: 10px; gap: 8px; }
+  .tool-mode-group { width: 100%; border: 0; padding: 0; justify-content: center; gap: 4px; }
+  .btn-tool-tab { font-size: .65rem; padding: 6px; }
+  .palette-group { width: 180px; max-width: 180px; gap: 5px; }
+  .color-swatch { width: 18px; height: 18px; }
+  .mixing-btn-wrap { border: 0; padding: 0; }
+  .slider-group { border: 0; }
+  .btn-mixing-toggle { font-size: .65rem; padding: 6px; }
+  .finish-dock { bottom: 180px; right: 14px; }
+  .btn-finish { padding: 8px 10px; font-size: .68rem; }
+  .timelapse-banner { top: 76px; right: 14px; font-size: .62rem; }
+  .mixing-palette-popover { right: 10px; top: 280px; max-width: calc(100vw - 20px); }
+  #mixing-canvas { max-width: 100%; }
+}
+
+/* 실제 3D 획과 형광/네온 팔레트 */
+.volume-tool { border-color: rgba(147, 204, 225, .4); }
+.volume-tool.active { background: linear-gradient(120deg, rgba(0, 245, 255, .22), rgba(255, 43, 214, .22)); border-color: #77e6ed; }
+.neon-palette { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 7px; margin-top: 2px; border-top: 1px solid var(--panel-border); }
+.neon-palette-label { width: 100%; font-size: .55rem; color: #bbc2d6; letter-spacing: 1px; }
+.neon-swatch { box-shadow: 0 0 7px color-mix(in srgb, var(--swatch-color) 45%, transparent); }
+.neon-swatch.active { border-color: white; box-shadow: 0 0 13px var(--swatch-color); }
+#depth-control[hidden], #volume-brush-hint[hidden] { display: none; }
+#volume-brush-hint { font-size: .62rem; color: #b5dbe2; line-height: 1.6; }
+.finish-dock { bottom: 185px; }
+.controls-hint { bottom: 185px; }
+@media (max-width: 1100px) {
+  .finish-dock { bottom: 210px; }
+}
+@media (max-width: 680px) {
+  .tool-mode-group { flex-wrap: wrap; }
+  .btn-tool-tab { padding: 6px; font-size: .63rem; }
+  .neon-palette { gap: 5px; padding-top: 5px; }
+  .finish-dock { bottom: 250px; }
+  #volume-brush-hint { font-size: .58rem; }
+  .slider-group { flex-wrap: wrap; justify-content: center; padding-right: 0; }
+}
+
+/* 팔레트와 3D 슬라이더가 늘어나도 완성하기 버튼을 도구 위에 유지합니다. */
+.finish-dock, .controls-hint { bottom: calc(var(--drawing-dock-height, 150px) + 36px); }
+@media (max-width: 680px) {
+  .tool-mode-group { gap: 3px; }
+  .btn-tool-tab { padding: 5px 4px; font-size: .6rem; }
+  .finish-dock { bottom: calc(var(--drawing-dock-height, 230px) + 24px); }
+}

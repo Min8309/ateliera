@@ -34,10 +34,15 @@ export class WatercolorBrush extends BaseBrush {
 
     // 수채화 특유의 Water Edge 그라데이션: 중심부는 맑고 가장자리(0.75~0.92)가 짙어지다 부드럽게 페이드아웃
     const grad = ctx.createRadialGradient(radius, radius, 0, radius, radius, radius);
-    grad.addColorStop(0, color);
-    grad.addColorStop(0.65, color);
-    grad.addColorStop(0.88, color);   // 테두리 안료 응집(Water Edge)
-    grad.addColorStop(0.96, color);
+    const rgba = (alpha) => {
+      const hex = color.replace('#', '');
+      const value = parseInt(hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex, 16);
+      return `rgba(${value >> 16 & 255},${value >> 8 & 255},${value & 255},${alpha})`;
+    };
+    grad.addColorStop(0, rgba(0.28));
+    grad.addColorStop(0.65, rgba(0.38));
+    grad.addColorStop(0.88, rgba(0.85));   // 테두리 안료 응집(Water Edge)
+    grad.addColorStop(0.96, rgba(0.4));
     grad.addColorStop(1, 'transparent');
 
     ctx.fillStyle = grad;
@@ -73,13 +78,13 @@ export class WatercolorBrush extends BaseBrush {
     ctx.fillStyle = options.color;
 
     for (let i = 0; i < particleCount; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const r = radius * (0.35 + Math.random() * 0.65);
+      const angle = (options.random ?? Math.random)() * Math.PI * 2;
+      const r = radius * (0.35 + (options.random ?? Math.random)() * 0.65);
       const px = x + Math.cos(angle) * r;
       const py = y + Math.sin(angle) * r;
-      const pSize = 0.6 + Math.random() * 1.4;
+      const pSize = 0.6 + (options.random ?? Math.random)() * 1.4;
 
-      ctx.globalAlpha = alpha * (0.2 + Math.random() * 0.35);
+      ctx.globalAlpha = alpha * (0.2 + (options.random ?? Math.random)() * 0.35);
       ctx.beginPath();
       ctx.arc(px, py, pSize, 0, Math.PI * 2);
       ctx.fill();

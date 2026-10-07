@@ -18,10 +18,12 @@
  * 단일 스트로크(붓질 획) 모델
  * @typedef {Object} Stroke
  * @property {string} id - 고유 스트로크 UUID
- * @property {'pen'|'pencil'|'watercolor'|'airbrush'|'eraser'} tool - 드로잉 도구 종류
+ * @property {'pen'|'pencil'|'paint'|'charcoal'|'watercolor'|'airbrush'|'volume'|'eraser'} tool - 드로잉 도구 종류
  * @property {string} color - 브러시 색상 (#RRGGBB 또는 rgba)
  * @property {number} size - 브러시 기본 지름 (픽셀)
  * @property {number} opacity - 기본 불투명도 (0.0 ~ 1.0)
+ * @property {boolean} neon - 네온 발광 여부 (3D 브러시)
+ * @property {number} depth - 3D 획의 돌출 높이 (캔버스 픽셀 단위)
  * @property {Point[]} points - 연속된 coalesced 포인트 배열
  */
 
@@ -59,19 +61,21 @@ export function createPoint(x, y, pressure = 0.5, time = performance.now(), tilt
 /**
  * 새 Stroke 객체 생성 팩토리
  * @param {Object} options
- * @param {'pen'|'pencil'|'watercolor'|'airbrush'|'eraser'} [options.tool='watercolor']
+ * @param {'pen'|'pencil'|'paint'|'charcoal'|'watercolor'|'airbrush'|'volume'|'eraser'} [options.tool='watercolor']
  * @param {string} [options.color='#1B3B6F']
  * @param {number} [options.size=32]
  * @param {number} [options.opacity=0.12]
  * @returns {Stroke}
  */
-export function createStroke({ tool = 'watercolor', color = '#1B3B6F', size = 32, opacity = 0.12 } = {}) {
+export function createStroke({ tool = 'watercolor', color = '#1B3B6F', size = 32, opacity = 0.12, neon = false, depth = 40 } = {}) {
   return {
     id: `stroke_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     tool,
     color,
     size,
     opacity,
+    neon,
+    depth,
     points: []
   };
 }

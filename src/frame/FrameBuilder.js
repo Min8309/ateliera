@@ -6,11 +6,7 @@
 import * as THREE from 'three';
 
 export class FrameBuilder {
-  /**
-   * @param {THREE.Scene} scene
-   */
-  constructor(scene) {
-    this.scene = scene;
+  constructor() {
     this.currentFrameGroup = null;
 
     // 프레임 재질 프리셋 3종
@@ -34,17 +30,15 @@ export class FrameBuilder {
   }
 
   /**
-   * 캔버스(2x2)에 맞는 3D 몰딩 프레임 생성
+   * 캔버스 비율에 맞는 3D 몰딩 프레임 생성
    * @param {string} style - 'classic-wood' | 'antique-gold' | 'modern-black'
    * @returns {THREE.Group}
    */
-  createFrameMesh(style = 'classic-wood') {
+  createFrameMesh(style = 'classic-wood', canvasWidth = 2, canvasHeight = 2) {
     const group = new THREE.Group();
     group.name = `FrameMesh_${style}`;
     const mat = this.materials[style] || this.materials['classic-wood'];
 
-    const canvasWidth = 2.0;
-    const canvasHeight = 2.0;
     const borderThickness = 0.09; // 프레임 폭
     const frameDepth = 0.08;      // 프레임 앞뒤 두께
 
@@ -91,12 +85,10 @@ export class FrameBuilder {
    * @param {Function} [onComplete] - 완료 콜백
    */
   attachFrame(targetMesh, style = 'classic-wood', onComplete = null) {
-    if (this.currentFrameGroup) {
-      targetMesh.remove(this.currentFrameGroup);
-      this.currentFrameGroup = null;
-    }
+    this.removeFrame();
 
-    const frame = this.createFrameMesh(style);
+    const { width, height } = targetMesh.geometry.parameters;
+    const frame = this.createFrameMesh(style, width, height);
     this.currentFrameGroup = frame;
 
     // 시작 상태 (약간 앞으로 돌출되어 있고 살짝 확대됨)
@@ -111,10 +103,6 @@ export class FrameBuilder {
     const animate = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(1.0, elapsed / duration);
-
-      // Elastic Out 성향의 스냅 이징
-      const t = progress;
-      const ease = 1 + Math.sin(t * Math.PI * 1.5) * Math.exp(-t * 3.5);
 
       frame.position.z = (1.0 - progress) * 0.25;
       const scaleVal = 1.0 + (1.0 - progress) * 0.08;
@@ -134,11 +122,16 @@ export class FrameBuilder {
 
   /**
    * 현재 액자 제거
-   * @param {THREE.Mesh} targetMesh
    */
-  removeFrame(targetMesh) {
+  removeFrame() {
     if (this.currentFrameGroup) {
-      targetMesh.remove(this.currentFrameGroup);
+      this.currentFrameGroup.removeFromParent();
+      const geometries = new Set();
+      this.currentFrameGroup.traverse(child => {
+        if (child.geometry) geometries.add(child.geometry);
+        if (child.material && !Object.values(this.materials).includes(child.material)) child.material.dispose();
+      });
+      geometries.forEach(geometry => geometry.dispose());
       this.currentFrameGroup = null;
     }
   }

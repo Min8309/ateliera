@@ -11,9 +11,9 @@ export class CompletionManager {
    * @param {THREE.Camera} context.camera
    * @param {import('three/examples/jsm/controls/OrbitControls.js').OrbitControls} context.controls
    * @param {THREE.Mesh} context.drawingPlane
-   * @param {import('../main.js').DualCanvasManager} context.dualCanvas
+   * @param {import('../drawing/DualCanvas.js').DualCanvasManager} context.dualCanvas
    * @param {import('../frame/FrameBuilder.js').FrameBuilder} context.frameBuilder
-   * @param {Array} context.strokesData
+   * @param {Function} context.getStrokes
    * @param {Function} context.setDrawingBlocked
    */
   constructor(context) {
@@ -68,9 +68,12 @@ export class CompletionManager {
     this.context.setDrawingBlocked(true);
     this.context.controls.enabled = false;
 
-    // 카메라를 정면 캔버스 앞(z: 2.15, y: 0)으로 부드럽게 줌인
+    // 가로·세로 화면 모두에서 선택한 캔버스를 잘라내지 않도록 맞춥니다.
+    const { width, height } = this.context.drawingPlane.geometry.parameters;
+    const halfFov = THREE.MathUtils.degToRad(this.context.camera.fov / 2);
+    const distance = Math.max(height / 2, width / (2 * this.context.camera.aspect)) / Math.tan(halfFov) * 1.2;
     this.animateCameraTo(
-      new THREE.Vector3(0, 0, 2.15),
+      new THREE.Vector3(0, 0, distance),
       new THREE.Vector3(0, 0, 0),
       700,
       () => {
@@ -113,23 +116,24 @@ export class CompletionManager {
    */
   stampSignatureOnCanvas(artistName) {
     const ctx = this.context.dualCanvas.bgCtx;
-    const size = this.context.dualCanvas.size;
+    const { width, height } = this.context.dualCanvas;
+    const scale = Math.min(width, height) / 2048;
 
     ctx.save();
-    ctx.font = 'italic 44px "Outfit", cursive, sans-serif';
+    ctx.font = `italic ${44 * scale}px "Outfit", cursive, sans-serif`;
     ctx.fillStyle = 'rgba(28, 30, 36, 0.72)'; // 은은한 먹색 수채화 잉크
     ctx.textAlign = 'right';
     ctx.textBaseline = 'bottom';
 
     // 우측 하단 여백 배치
-    const posX = size - 80;
-    const posY = size - 60;
+    const posX = width - 80 * scale;
+    const posY = height - 60 * scale;
     ctx.fillText(`— ${artistName}`, posX, posY);
 
     // 연도 표기
-    ctx.font = '300 24px "Outfit", sans-serif';
+    ctx.font = `300 ${24 * scale}px "Outfit", sans-serif`;
     ctx.fillStyle = 'rgba(28, 30, 36, 0.45)';
-    ctx.fillText(new Date().getFullYear().toString(), posX, posY + 32);
+    ctx.fillText(new Date().getFullYear().toString(), posX, posY + 32 * scale);
 
     ctx.restore();
 
@@ -141,16 +145,20 @@ export class CompletionManager {
    */
   packageArtwork(title, artist, frameStyle) {
     // 배경과 서명이 합쳐진 최종 고해상도 DataURL
-    const dataUrl = this.context.dualCanvas.displayCanvas.toDataURL('image/png', 0.92);
+    const dataUrl = this.context.getArtworkImage
+      ? this.context.getArtworkImage()
+      : this.context.dualCanvas.displayCanvas.toDataURL('image/png');
 
     const artwork = {
       id: `art_${Date.now()}`,
       title: title,
       artist: artist,
       frameStyle: frameStyle,
+      width: this.context.dualCanvas.width,
+      height: this.context.dualCanvas.height,
       completedAt: new Date().toISOString(),
-      strokesCount: this.context.strokesData.length,
-      strokesData: this.context.strokesData,
+      strokesCount: this.context.getStrokes().length,
+      strokesData: structuredClone(this.context.getStrokes()),
       previewUrl: dataUrl
     };
 
