@@ -1,6 +1,6 @@
 /**
  * @file main.js
- * @description Ateliera (아틀리에라) - 전략 패턴 기반 4종 브러시, 중간점 2차 베지어 곡선 보간, 조색 패드 및 저지연 입력 파이프라인
+ * @description Ateliera (아틀리에라) - 전략 패턴 기반 4종 브러시, 중간점 2차 베지어 곡선 보간, 저지연 입력 파이프라인
  * 
  * [브러시 전략 패턴 통합]
  * 1. BrushManager: 4종 브러시(펜, 연필/목탄, 수채, 에어브러시) + 지우개 렌더링 파이프라인
@@ -71,11 +71,10 @@ class AtelieraApp {
       setDrawingBlocked: this.setDrawingBlocked.bind(this)
     });
 
-    // UI, HUD, 조색 패드 및 저지연 Pointer Events 바인딩
+    // UI, HUD 및 저지연 Pointer Events 바인딩
     this.initUI();
     this.initStudioControls();
     this.initHUD();
-    this.initMixingPad();
     this.bindPointerEvents();
 
     // 렌더 루프 가동
@@ -313,173 +312,6 @@ class AtelieraApp {
     if (latencyEl) {
       latencyEl.innerHTML = `${this.lastLatency.toFixed(1)} <small>ms</small>`;
     }
-  }
-
-  /* ==========================================================================
-     5. 드래그 이동 가능한 실제 물감 조색 패드 (Color Mixing Pad)
-     ========================================================================== */
-  initMixingPad() {
-    const popover = document.getElementById('mixing-palette-popover');
-    const toggleBtn = document.getElementById('btn-toggle-mixing');
-    const mixingCanvas = document.getElementById('mixing-canvas');
-    const btnClean = document.getElementById('btn-clean-pad');
-    const btnClose = document.getElementById('btn-close-mixing');
-    const previewChip = document.getElementById('preview-mixed-color');
-    const dragHandle = document.getElementById('mixing-drag-handle');
-
-    if (!mixingCanvas) return;
-    const mCtx = mixingCanvas.getContext('2d', { willReadFrequently: true });
-
-    const resetMixingCanvas = () => {
-      mCtx.save();
-      mCtx.fillStyle = '#FBF8F2';
-      mCtx.fillRect(0, 0, mixingCanvas.width, mixingCanvas.height);
-
-      const grad = mCtx.createRadialGradient(
-        mixingCanvas.width / 2, mixingCanvas.height / 2, 20,
-        mixingCanvas.width / 2, mixingCanvas.height / 2, 160
-      );
-      grad.addColorStop(0, 'rgba(255,255,255,0)');
-      grad.addColorStop(1, 'rgba(0,0,0,0.06)');
-      mCtx.fillStyle = grad;
-      mCtx.fillRect(0, 0, mixingCanvas.width, mixingCanvas.height);
-      mCtx.restore();
-    };
-
-    resetMixingCanvas();
-
-    toggleBtn.addEventListener('click', () => {
-      const isActive = popover.classList.toggle('active');
-      toggleBtn.classList.toggle('active', isActive);
-    });
-
-    if (btnClose) {
-      btnClose.addEventListener('click', () => {
-        popover.classList.remove('active');
-        toggleBtn.classList.remove('active');
-      });
-    }
-
-    btnClean.addEventListener('click', () => {
-      resetMixingCanvas();
-    });
-
-    // 드래그 이동 처리
-    let isDraggingPanel = false;
-    let dragStartX = 0;
-    let dragStartY = 0;
-    let panelInitialLeft = 0;
-    let panelInitialTop = 0;
-
-    if (dragHandle) {
-      dragHandle.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('button') || e.target.closest('input')) return;
-
-        isDraggingPanel = true;
-        dragHandle.classList.add('dragging');
-
-        const rect = popover.getBoundingClientRect();
-        panelInitialLeft = rect.left;
-        panelInitialTop = rect.top;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-
-        popover.style.right = 'auto';
-        popover.style.bottom = 'auto';
-        popover.style.left = `${panelInitialLeft}px`;
-        popover.style.top = `${panelInitialTop}px`;
-
-        dragHandle.setPointerCapture(e.pointerId);
-      });
-
-      dragHandle.addEventListener('pointermove', (e) => {
-        if (!isDraggingPanel) return;
-
-        const dx = e.clientX - dragStartX;
-        const dy = e.clientY - dragStartY;
-
-        let nextLeft = panelInitialLeft + dx;
-        let nextTop = panelInitialTop + dy;
-
-        const padW = popover.offsetWidth || 340;
-        const padH = popover.offsetHeight || 240;
-        nextLeft = Math.max(10, Math.min(window.innerWidth - padW - 10, nextLeft));
-        nextTop = Math.max(10, Math.min(window.innerHeight - padH - 10, nextTop));
-
-        popover.style.left = `${nextLeft}px`;
-        popover.style.top = `${nextTop}px`;
-      });
-
-      const stopDrag = (e) => {
-        if (isDraggingPanel) {
-          isDraggingPanel = false;
-          dragHandle.classList.remove('dragging');
-          try {
-            dragHandle.releasePointerCapture(e.pointerId);
-          } catch (_) {}
-        }
-      };
-
-      dragHandle.addEventListener('pointerup', stopDrag);
-      dragHandle.addEventListener('pointercancel', stopDrag);
-    }
-
-    // 조색 패드 드로잉 & 컬러 스포이드 채취
-    let mixingPointerId = null;
-
-    const drawOnMixingPad = (e) => {
-      const rect = mixingCanvas.getBoundingClientRect();
-      const x = Math.max(0, Math.min(mixingCanvas.width - 1, ((e.clientX - rect.left) / rect.width) * mixingCanvas.width));
-      const y = Math.max(0, Math.min(mixingCanvas.height - 1, ((e.clientY - rect.top) / rect.height) * mixingCanvas.height));
-
-      mCtx.save();
-      mCtx.globalAlpha = Math.min(0.28, this.brush.baseOpacity * 1.5);
-      mCtx.globalCompositeOperation = 'source-over';
-
-      const radius = Math.max(12, this.brush.baseSize * 0.45);
-      const grad = mCtx.createRadialGradient(x, y, radius * 0.1, x, y, radius);
-      grad.addColorStop(0, this.brush.color);
-      grad.addColorStop(0.8, this.brush.color);
-      grad.addColorStop(1, 'transparent');
-
-      mCtx.fillStyle = grad;
-      mCtx.beginPath();
-      mCtx.arc(x, y, radius, 0, Math.PI * 2);
-      mCtx.fill();
-      mCtx.restore();
-
-      const pixel = mCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-      if (pixel[3] > 10) {
-        const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1)}`;
-        this.brush.color = hex;
-        this.brush.neon = false;
-        if (previewChip) previewChip.style.background = hex;
-
-        const swatches = document.querySelectorAll('.color-swatch');
-        swatches.forEach(s => s.classList.remove('active'));
-      }
-    };
-
-    mixingCanvas.addEventListener('pointerdown', (e) => {
-      if (this.isDrawingBlocked || e.button !== 0 || mixingPointerId !== null) return;
-      mixingPointerId = e.pointerId;
-      mixingCanvas.setPointerCapture(e.pointerId);
-      drawOnMixingPad(e);
-    });
-
-    window.addEventListener('pointermove', (e) => {
-      if (e.pointerId !== mixingPointerId || this.isDrawingBlocked) return;
-      drawOnMixingPad(e);
-    });
-
-    const stopMixing = (e) => {
-      if (e.pointerId !== mixingPointerId) return;
-      mixingPointerId = null;
-      if (mixingCanvas.hasPointerCapture(e.pointerId)) mixingCanvas.releasePointerCapture(e.pointerId);
-    };
-    window.addEventListener('pointerup', stopMixing);
-    window.addEventListener('pointercancel', stopMixing);
-    mixingCanvas.addEventListener('lostpointercapture', stopMixing);
   }
 
   /* ==========================================================================

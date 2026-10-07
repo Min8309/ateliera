@@ -433,39 +433,6 @@ body, html {
   background: transparent;
 }
 
-/* 조색 팔레트 버튼 */
-.mixing-btn-wrap {
-  border-right: 1px solid var(--panel-border);
-  padding-right: 12px;
-}
-
-.btn-mixing-toggle {
-  background: linear-gradient(135deg, rgba(230, 110, 80, 0.25), rgba(94, 129, 244, 0.25));
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  padding: 7px 11px;
-  border-radius: var(--radius-sm);
-  font-size: 0.78rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.btn-mixing-toggle:hover {
-  border-color: var(--gold);
-  transform: translateY(-1px);
-}
-
-.btn-mixing-toggle.active {
-  background: linear-gradient(135deg, rgba(230, 110, 80, 0.45), rgba(94, 129, 244, 0.45));
-  border-color: var(--gold);
-  box-shadow: 0 0 12px var(--gold-glow);
-}
-
 /* 슬라이더 컨트롤 */
 .slider-group {
   display: flex;
@@ -543,143 +510,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .btn-history:disabled {
   opacity: 0.3;
   cursor: not-allowed;
-}
-
-/* ==========================================================================
-   드래그 가능한 플로팅 조색 패드 (Draggable Floating Mixing Pad)
-   ========================================================================== */
-.mixing-palette-popover {
-  position: fixed;
-  top: 140px;
-  right: 28px;
-  z-index: 25;
-  background: rgba(22, 25, 34, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  padding: 12px 14px;
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(24px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 0, 0, 0.3);
-  display: none;
-  flex-direction: column;
-  gap: 10px;
-  touch-action: none;
-  animation: popoverFade 0.2s ease-out;
-}
-
-.mixing-palette-popover.active {
-  display: flex;
-}
-
-@keyframes popoverFade {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* 조색 패드 드래그 핸들 헤더 */
-.mixing-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: grab;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.mixing-header.dragging {
-  cursor: grabbing;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.drag-handle-grip {
-  font-size: 1.1rem;
-  color: var(--text-muted);
-  line-height: 1;
-}
-
-.mixing-title {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.mixing-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.current-mixed-preview {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.68rem;
-  color: var(--text-muted);
-}
-
-.preview-chip {
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 0 2px rgba(0,0,0,0.4);
-}
-
-.btn-clean-pad {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-main);
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.68rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-clean-pad:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-}
-
-.btn-close-panel {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: all 0.15s;
-}
-
-.btn-close-panel:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-}
-
-/* 조색 캔버스 (도자기 백자 팔레트 질감) */
-#mixing-canvas {
-  width: 320px;
-  height: 160px;
-  background: #fdfbf7;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  cursor: crosshair;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
-  touch-action: none;
-}
-
-.mixing-hint {
-  font-size: 0.66rem;
-  color: var(--text-muted);
-  text-align: center;
-  max-width: 320px;
-  line-height: 1.3;
 }
 
 /* 타임랩스 배너 */
@@ -918,8 +748,8 @@ select:disabled { opacity: .5; cursor: not-allowed; }
 body[data-time-of-day="day"] { --panel-bg: rgba(35, 41, 40, .82); --accent: #9caa8d; --accent-glow: rgba(156, 170, 141, .3); }
 .controls-hint { bottom: 110px; }
 .drawing-dock { width: max-content; max-width: calc(100vw - 48px); bottom: 24px; flex-wrap: wrap; justify-content: center; }
-.tool-mode-group, .palette-group, .mixing-btn-wrap, .slider-group, .history-btn-group { flex-shrink: 0; }
-.btn-tool-tab, .btn-mixing-toggle { white-space: nowrap; }
+.tool-mode-group, .palette-group, .slider-group, .history-btn-group { flex-shrink: 0; }
+.btn-tool-tab { white-space: nowrap; }
 .palette-group { width: 218px; }
 .finish-dock { bottom: 112px; }
 
@@ -951,14 +781,10 @@ body[data-time-of-day="day"] { --panel-bg: rgba(35, 41, 40, .82); --accent: #9ca
   .btn-tool-tab { font-size: .65rem; padding: 6px; }
   .palette-group { width: 180px; max-width: 180px; gap: 5px; }
   .color-swatch { width: 18px; height: 18px; }
-  .mixing-btn-wrap { border: 0; padding: 0; }
   .slider-group { border: 0; }
-  .btn-mixing-toggle { font-size: .65rem; padding: 6px; }
   .finish-dock { bottom: 180px; right: 14px; }
   .btn-finish { padding: 8px 10px; font-size: .68rem; }
   .timelapse-banner { top: 76px; right: 14px; font-size: .62rem; }
-  .mixing-palette-popover { right: 10px; top: 280px; max-width: calc(100vw - 20px); }
-  #mixing-canvas { max-width: 100%; }
 }
 
 /* 실제 3D 획과 형광/네온 팔레트 */

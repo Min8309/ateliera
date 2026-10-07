@@ -102,26 +102,6 @@
     <span>🔍 <strong>휠</strong>: 줌</span>
   </footer>
 
-  <!-- [조색 팔레트] 드래그 이동 가능한 인터랙티브 물감 조색 패드 (Draggable Floating Panel) -->
-  <div id="mixing-palette-popover" class="mixing-palette-popover">
-    <div class="mixing-header" id="mixing-drag-handle" title="드래그하여 원하는 위치로 이동하세요">
-      <div class="header-left">
-        <span class="drag-handle-grip">⠿</span>
-        <span class="mixing-title">🎨 수채화 조색 패드 (Mix Pad)</span>
-      </div>
-      <div class="mixing-actions">
-        <div class="current-mixed-preview" title="현재 채취된 혼합 색상">
-          <span>채취색:</span>
-          <div id="preview-mixed-color" class="preview-chip" style="background: #1B3B6F;"></div>
-        </div>
-        <button id="btn-clean-pad" class="btn-clean-pad" title="조색 패드 맑게 씻어내기">💧 물세척</button>
-        <button id="btn-close-mixing" class="btn-close-panel" title="조색 패드 닫기">✕</button>
-      </div>
-    </div>
-    <canvas id="mixing-canvas" width="320" height="160"></canvas>
-    <p class="mixing-hint">💡 물감을 문지른 후 클릭하면 해당 혼합색이 브러시로 채취됩니다. (상단 바로 이동 가능)</p>
-  </div>
-
   <!-- 하단 메인 플로팅 드로잉 툴바 -->
   <main class="drawing-dock">
     <!-- 도구 전환 (브러시 4종 ↔ 지우개) -->
@@ -183,13 +163,6 @@
         <button class="color-swatch neon-swatch" data-color="#B026FF" data-neon="true" style="--swatch-color: #B026FF; background: #B026FF;" title="네온 바이올렛" aria-label="네온 바이올렛"></button>
         <button class="color-swatch neon-swatch" data-color="#FF6B00" data-neon="true" style="--swatch-color: #FF6B00; background: #FF6B00;" title="형광 오렌지" aria-label="형광 오렌지"></button>
       </div>
-    </div>
-
-    <!-- 조색 팔레트 열기 토글 버튼 -->
-    <div class="mixing-btn-wrap">
-      <button id="btn-toggle-mixing" class="btn-mixing-toggle" title="물감을 섞는 조색 패드 열기">
-        🎨 조색 패드
-      </button>
     </div>
 
     <!-- 슬라이더 (브러시 크기, 불투명도 및 3D 돌출 높이) -->
