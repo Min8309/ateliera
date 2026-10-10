@@ -67,10 +67,6 @@
       <p id="canvas-size-hint">크기를 바꿔도 그림은 비율을 유지해요.</p>
       <p id="volume-brush-hint" hidden>3D 획은 캔버스 앞에 입체로 그려져요. 우클릭으로 돌려보세요. 네온 색상은 빛나는 테두리가 더해집니다.</p>
     </div>
-    <div class="supplies-reference">
-      <a href="https://hwabang.net/" target="_blank" rel="noopener noreferrer" aria-label="화방넷에서 미술용품 가격 확인 (새 탭)">미술용품 가격 확인 · 화방넷 ↗</a>
-      <p>현재 판매 가격과 재고는 화방넷에서 확인해 주세요.</p>
-    </div>
   </section>
 
   <nav class="space-navigation" aria-label="공간 이동">
@@ -93,9 +89,8 @@
   <p id="shop-status" class="shop-status" role="status" aria-live="polite"></p>
   <aside id="product-tooltip" class="product-tooltip" hidden aria-label="미술용품 가격 정보">
     <strong id="tooltip-product-name"></strong>
-    <p id="tooltip-product-price">가격 · 화방넷에서 확인</p>
-    <p class="tooltip-note">현재 판매 가격과 재고는 판매처에서 확인해 주세요.</p>
-    <a id="tooltip-price-link" href="https://hwabang.net/" target="_blank" rel="noopener noreferrer">화방넷 가격 정보 보기 ↗</a>
+    <p id="tooltip-product-price">가격 정보 준비 중</p>
+    <p class="tooltip-note">지금은 용품을 골라 담는 체험 공간입니다.</p>
     <button id="tooltip-add-product" type="button">장바구니 담기</button>
   </aside>
   <dialog id="controls-dialog" class="shop-dialog" aria-labelledby="controls-title">
@@ -107,7 +102,7 @@
         <tr><td>화실 둘러보기</td><td>이동 모드 시작</td></tr>
         <tr><td>W, A, S, D / 방향키</td><td>앞·뒤·좌·우 이동</td></tr>
         <tr><td>화면 드래그</td><td>마우스 또는 터치로 시선 회전</td></tr>
-        <tr><td>물건에 마우스 올리기</td><td>가격 확인 링크와 담기 말풍선</td></tr>
+        <tr><td>물건에 마우스 올리기</td><td>상품 안내와 담기 말풍선</td></tr>
         <tr><td>물건 클릭 / E</td><td>상품 상세 보기 또는 문 열기</td></tr>
         <tr><td>Shift</td><td>장바구니 열기 / 닫기</td></tr>
         <tr><td>Esc</td><td>창 닫기 / 이동 모드에서 그리기로 복귀</td></tr>
@@ -121,8 +116,7 @@
     <button class="shop-close" data-close-shop-dialog aria-label="상품 상세 닫기">✕</button>
     <span class="shop-eyebrow">ART MATERIALS</span>
     <h2 id="product-title"></h2><p id="product-description"></p>
-    <p>예시 용품입니다. 실제 판매 상품과 가격·재고는 화방넷에서 확인해 주세요.</p>
-    <a id="product-price-link" href="https://hwabang.net/" target="_blank" rel="noopener noreferrer">화방넷에서 상품·가격 확인 ↗</a>
+    <p>예시 용품입니다. 가격 정보와 외부 구매 연결은 준비 중입니다.</p>
     <button id="btn-add-product">장바구니 담기</button>
     <p id="product-feedback" role="status"></p>
   </dialog>
@@ -130,8 +124,7 @@
     <button class="shop-close" data-close-shop-dialog aria-label="장바구니 닫기">✕</button>
     <h2 id="cart-title">나의 미술용품 장바구니</h2>
     <ul id="cart-items"></ul><p id="cart-summary"></p>
-    <p>이 장바구니는 화실 안의 선택 목록입니다. 화방넷 장바구니와 연동되거나 주문되지는 않습니다.</p>
-    <a href="https://hwabang.net/" target="_blank" rel="noopener noreferrer">화방넷 방문 ↗</a>
+    <p>이 장바구니는 화실 안의 선택 목록입니다. 실제 주문이나 결제는 진행되지 않습니다.</p>
   </dialog>
 
   <!-- 화면 우측 상단 액션 컨트롤 패널 -->

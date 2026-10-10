@@ -24,3 +24,24 @@ test('walking respects doorway, closed door and room bounds', () => {
   assert.equal(explorer.canMove(-11,1.3),false);
   assert.equal(explorer.canMove(-8,1.3),true);
 });
+
+
+test('walking covers the same distance across frame rates and cannot cross a closed wall', () => {
+  const createExplorer = () => {
+    const explorer = Object.create(StudioExplorer.prototype);
+    explorer.app = {camera:{position:{x:0,z:3}}};
+    explorer.keys = new Set(['KeyW']);explorer.yaw = 0;
+    explorer.room = {doorOpen:false};explorer.colliders = [];
+    return explorer;
+  };
+  const fast = createExplorer(), slow = createExplorer();
+  for(let i=0;i<60;i++) fast.move(1/60);
+  for(let i=0;i<4;i++) slow.move(.25);
+  assert.ok(Math.abs(fast.app.camera.position.z-slow.app.camera.position.z)<1e-10);
+  const blocked = createExplorer();blocked.app.camera.position = {x:-5.3,z:1.3};blocked.yaw=Math.PI/2;
+  for(let i=0;i<4;i++) blocked.move(.25);
+  assert.ok(blocked.app.camera.position.x > -5.68);
+  blocked.room.doorOpen=true;
+  for(let i=0;i<4;i++) blocked.move(.25);
+  assert.ok(blocked.app.camera.position.x < -6.5);
+});

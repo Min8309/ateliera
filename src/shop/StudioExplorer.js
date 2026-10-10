@@ -34,8 +34,7 @@ export class StudioExplorer {
     document.querySelectorAll('[data-close-shop-dialog]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
     document.getElementById('btn-add-product').addEventListener('click', () => {
       if (!this.selectedProduct) return;
-      this.addProduct(this.selectedProduct);
-      document.getElementById('product-feedback').textContent = '장바구니에 담았습니다.';
+      document.getElementById('product-feedback').textContent = this.addProduct(this.selectedProduct) ? '장바구니에 담았습니다.' : '같은 용품은 최대 99개까지 담을 수 있습니다.';
     });
     document.getElementById('cart-items').addEventListener('click', event => {
       const button = event.target.closest('button[data-cart-id]');if (!button) return;
@@ -63,7 +62,7 @@ export class StudioExplorer {
     app.canvasEl.addEventListener('pointerdown', event => {
       if (!this.active || this.modalOpen() || event.button !== 0) return;
       this.hideTooltip();
-      this.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
+      this.drag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false, distance: 0 };
       app.canvasEl.setPointerCapture(event.pointerId);
     });
     window.addEventListener('pointermove', event => {
@@ -80,7 +79,8 @@ export class StudioExplorer {
       }
       if (drag.id !== event.pointerId) return;
       const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
-      if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
+      drag.distance += Math.hypot(dx,dy);
+      if (drag.distance > 4) drag.moved = true;
       this.yaw -= dx * .004;this.pitch = THREE.MathUtils.clamp(this.pitch - dy * .004, -.95, .95);
       drag.x = event.clientX;drag.y = event.clientY;this.applyLook();
     });
@@ -116,8 +116,11 @@ export class StudioExplorer {
     if (!this.cartDialog.open) this.cartDialog.showModal();
   }
   addProduct(product) {
+    if ((this.cart[product.id] || 0) >= 99) {
+      this.status.textContent = '같은 용품은 최대 99개까지 담을 수 있습니다.';return false;
+    }
     this.cart = changeQuantity(this.cart, product.id, 1);this.saveCart();
-    this.status.textContent = `${product.name}을 장바구니에 담았습니다.`;
+    this.status.textContent = `${product.name}을 장바구니에 담았습니다.`;return true;
   }
   hideTooltip() {
     clearTimeout(this.hoverTimer);this.tooltip.hidden = true;this.hoverProduct = null;
@@ -126,8 +129,7 @@ export class StudioExplorer {
     const product = PRODUCTS.find(p => p.id === data.id);if (!product) return;
     clearTimeout(this.hoverTimer);this.hoverProduct = product;
     document.getElementById('tooltip-product-name').textContent = product.name;
-    document.getElementById('tooltip-product-price').textContent = '가격 · 화방넷에서 확인';
-    document.getElementById('tooltip-price-link').href = product.priceUrl;
+    document.getElementById('tooltip-product-price').textContent = '가격 정보 준비 중';
     this.tooltip.hidden = false;
     this.tooltip.style.left = `${Math.max(8, Math.min(innerWidth-this.tooltip.offsetWidth-8, x+16))}px`;
     this.tooltip.style.top = `${Math.max(8, Math.min(innerHeight-this.tooltip.offsetHeight-8, y+16))}px`;
@@ -148,7 +150,7 @@ export class StudioExplorer {
     this.status.textContent = '진열된 물건이나 이름표를 선택해 장바구니에 담으세요.';
   }
   leave() {
-    this.keys.clear();this.drag = null;this.active = false;
+    this.keys.clear();this.drag = null;this.active = false;this.status.textContent = '';
     this.hideTooltip();this.helpDialog.close();
     this.productDialog.close();this.cartDialog.close();document.body.classList.remove('exploring');this.app.environment.backWall.visible = false;
     document.getElementById('btn-explore').textContent = '화실 둘러보기';
@@ -179,7 +181,6 @@ export class StudioExplorer {
       this.selectedProduct = PRODUCTS.find(product => product.id === data.id);if (!this.selectedProduct) return;
       document.getElementById('product-title').textContent = data.name;
       document.getElementById('product-description').textContent = data.description;
-      document.getElementById('product-price-link').href = this.selectedProduct.priceUrl;
       document.getElementById('product-feedback').textContent = '';
       this.productDialog.showModal();
     }
@@ -195,19 +196,27 @@ export class StudioExplorer {
   update(delta) {
     this.room.update(delta);
     if (!this.active || this.modalOpen()) return;
-    const dt = Math.min(delta,.05);
     if (this.keys.size) this.hideTooltip();
+    this.move(delta);
+    this.target = this.findTarget();
+    const button = document.getElementById('btn-inspect-object');
+    button.hidden = !this.target;button.textContent = this.target ? `${this.target.name} · ${this.target.type==='door' ? '문 열기' : '살펴보기'} [E]` : '';
+  }
+  // Small collision steps preserve walking speed across frame rates.
+  move(delta) {
+    const duration = Math.max(0, Math.min(delta,.25));
+    const steps = Math.max(1,Math.ceil(duration/.05));
+    const dt = duration/steps;
     const forward = Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown'));
     const sideways = Number(this.keys.has('KeyD') || this.keys.has('ArrowRight')) - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft'));
     const length = Math.hypot(forward,sideways) || 1;
     const dx = (-Math.sin(this.yaw)*forward + Math.cos(this.yaw)*sideways) / length * 2.2 * dt;
     const dz = (-Math.cos(this.yaw)*forward - Math.sin(this.yaw)*sideways) / length * 2.2 * dt;
     const pos = this.app.camera.position;
-    if (this.canMove(pos.x+dx,pos.z)) pos.x += dx;
-    if (this.canMove(pos.x,pos.z+dz)) pos.z += dz;
-    this.target = this.findTarget();
-    const button = document.getElementById('btn-inspect-object');
-    button.hidden = !this.target;button.textContent = this.target ? `${this.target.name} · ${this.target.type==='door' ? '문 열기' : '살펴보기'} [E]` : '';
+    for (let i=0;i<steps;i++) {
+      if (this.canMove(pos.x+dx,pos.z)) pos.x += dx;
+      if (this.canMove(pos.x,pos.z+dz)) pos.z += dz;
+    }
   }
   saveCart() {
     try { localStorage.setItem('ateliera_supplies_cart',JSON.stringify(this.cart)); } catch { this.status.textContent = '저장 공간이 부족해 장바구니는 현재 화면에서만 유지됩니다.'; }
@@ -220,7 +229,6 @@ export class StudioExplorer {
       const quantity = this.cart[product.id];if (!quantity) continue;count += quantity;
       const row = document.createElement('li');
       const name = document.createElement('span');name.textContent = `${product.name} · ${quantity}개`;row.append(name);
-      const link = document.createElement('a');link.href=product.priceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='가격 확인 ↗';row.append(link);
       for (const [delta,label] of [[-1,'−'],[1,'+'],['remove','삭제']]) {
         const button=document.createElement('button');button.type='button';button.dataset.cartId=product.id;button.dataset.delta=delta;button.textContent=label;
         button.setAttribute('aria-label',`${product.name} ${delta===-1?'수량 줄이기':delta===1?'수량 늘리기':'삭제'}`);row.append(button);
@@ -228,6 +236,6 @@ export class StudioExplorer {
       container.append(row);
     }
     document.getElementById('cart-count').textContent = count;
-    document.getElementById('cart-summary').textContent = count ? `총 ${count}개 · 가격과 재고는 화방넷에서 확인해 주세요.` : '아직 담은 물건이 없습니다. 용품실에서 물건을 골라보세요.';
+    document.getElementById('cart-summary').textContent = count ? `총 ${count}개 · 가격 정보 준비 중` : '아직 담은 물건이 없습니다. 용품실에서 물건을 골라보세요.';
   }
 }

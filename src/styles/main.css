@@ -818,12 +818,6 @@ body[data-time-of-day="day"] { --panel-bg: rgba(35, 41, 40, .82); --accent: #9ca
   .finish-dock { bottom: calc(var(--drawing-dock-height, 230px) + 24px); }
 }
 
-/* 미술용품의 현재 가격은 외부 판매처에서 확인합니다. */
-.supplies-reference { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--panel-border); }
-.supplies-reference a { display: block; color: #e3bd7b; font-size: .72rem; line-height: 1.6; text-underline-offset: 3px; }
-.supplies-reference a:focus-visible { outline: 2px solid #e3bd7b; outline-offset: 3px; }
-.supplies-reference p { margin: 5px 0 0; color: var(--text-muted); font-size: .6rem; line-height: 1.5; }
-
 /* 화실과 미술용품실 탐색 */
 .space-navigation { position: fixed; top: 90px; left: 24px; z-index: 20; display:flex; gap:6px; flex-wrap:wrap; max-width:calc(100vw - 48px); }
 .space-navigation button, .exploration-controls button, .shop-dialog button { font:inherit; cursor:pointer; border:1px solid #a28a65; border-radius:8px; background:#393930; color:#f4ecd9; padding:9px 12px; font-size:.76rem; }
