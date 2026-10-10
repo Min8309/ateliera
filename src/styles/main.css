@@ -823,3 +823,50 @@ body[data-time-of-day="day"] { --panel-bg: rgba(35, 41, 40, .82); --accent: #9ca
 .supplies-reference a { display: block; color: #e3bd7b; font-size: .72rem; line-height: 1.6; text-underline-offset: 3px; }
 .supplies-reference a:focus-visible { outline: 2px solid #e3bd7b; outline-offset: 3px; }
 .supplies-reference p { margin: 5px 0 0; color: var(--text-muted); font-size: .6rem; line-height: 1.5; }
+
+/* 화실과 미술용품실 탐색 */
+.space-navigation { position: fixed; top: 90px; left: 24px; z-index: 20; display:flex; gap:6px; flex-wrap:wrap; max-width:calc(100vw - 48px); }
+.space-navigation button, .exploration-controls button, .shop-dialog button { font:inherit; cursor:pointer; border:1px solid #a28a65; border-radius:8px; background:#393930; color:#f4ecd9; padding:9px 12px; font-size:.76rem; }
+.space-navigation button:hover, .exploration-controls button:hover, .shop-dialog button:hover { background:#65543d; }
+.exploration-controls { display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:20; background:rgba(32,33,29,.92); padding:14px; border-radius:14px; text-align:center; width:max-content; max-width:calc(100vw - 28px); }
+.exploration-controls p { font-size:.72rem; color:#e7d9c3; margin:0 0 10px; }
+.walk-buttons { display:flex; justify-content:center; gap:7px; margin-bottom:10px; }
+.walk-buttons button { min-width:45px; touch-action:none; }
+.shop-status { position:fixed; bottom:190px; left:50%; transform:translateX(-50%); max-width:90vw; width:max-content; z-index:20; font-size:.75rem; background:rgba(32,33,29,.9); color:#eee0c6; border-radius:8px; padding:8px 12px; pointer-events:none; }
+.shop-status:empty { display:none; }
+body:not(.exploring) .shop-status { bottom:calc(var(--drawing-dock-height,150px) + 75px); }
+body.exploring .exploration-controls { display:block; }
+body.exploring .drawing-dock, body.exploring .finish-dock, body.exploring .controls-hint, body.exploring .studio-panel, body.exploring .action-control-panel, body.exploring .performance-hud { display:none; }
+.shop-dialog { background:#f3ecdf; color:#403728; border:1px solid #aa8d62; border-radius:18px; padding:30px; width:480px; max-width:calc(100vw - 32px); max-height:80vh; overflow:auto; }
+.shop-dialog::backdrop { background:rgba(20,22,19,.62); }
+.shop-dialog h2 { font-size:1.25rem; margin:14px 0; }
+.shop-dialog p { font-size:.8rem; line-height:1.7; }
+.shop-dialog a { color:#715029; font-size:.82rem; text-underline-offset:3px; }
+.shop-dialog .shop-close { float:right; }
+.shop-eyebrow { color:#796447; font-size:.66rem; letter-spacing:2px; }
+#btn-add-product { display:block; margin-top:20px; background:#665235; }
+#cart-items { padding:0; list-style:none; }
+#cart-items li { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 0; border-bottom:1px solid #d2c5af; }
+#cart-items li span { width:100%; }
+#cart-count { background:#b99457; color:#231f17; padding:2px 6px; border-radius:12px; }
+[hidden]#btn-inspect-object { display:none; }
+@media(max-width:680px) {
+  .space-navigation { top:60px; left:14px; gap:4px; }
+  .space-navigation button { padding:7px; font-size:.65rem; }
+  body:not(.exploring) .studio-panel { top:110px; }
+  .exploration-controls { bottom:14px; padding:10px; }
+  .exploration-controls p { font-size:.62rem; }
+  .shop-status { bottom:185px; font-size:.65rem; }
+}
+
+.product-tooltip { position:fixed; z-index:35; width:245px; max-width:calc(100vw - 16px); background:#f6efe1; color:#433825; border:1px solid #b89b70; border-radius:12px; box-shadow:0 8px 30px #0005; padding:14px; }
+.product-tooltip[hidden] { display:none; }
+.product-tooltip strong { display:block; font-size:.9rem; }
+.product-tooltip p { font-size:.76rem; margin:8px 0; }
+.product-tooltip .tooltip-note { font-size:.64rem; line-height:1.5; color:#76644d; }
+.product-tooltip a { display:block; color:#755321; font-size:.75rem; text-underline-offset:3px; }
+.product-tooltip button { margin-top:10px; background:#665235; color:#fff4df; border:0; border-radius:6px; padding:8px 12px; cursor:pointer; font:inherit; font-size:.74rem; }
+.controls-table { width:100%; border-collapse:collapse; font-size:.75rem; }
+.controls-table td, .controls-table th { padding:10px 8px; border:1px solid #d1c2aa; text-align:left; line-height:1.6; }
+.controls-table th { background:#e6dcc8; }
+.controls-table td:first-child { width:38%; font-weight:600; }

@@ -11,6 +11,7 @@
  */
 
 import * as THREE from 'three';
+import { StudioExplorer } from './shop/StudioExplorer.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AtelierEnvironment } from './environment/AtelierEnvironment.js';
 import { FrameBuilder } from './frame/FrameBuilder.js';
@@ -76,6 +77,7 @@ class AtelieraApp {
     this.initStudioControls();
     this.initHUD();
     this.bindPointerEvents();
+    this.explorer = new StudioExplorer(this);
 
     // 렌더 루프 가동
     this.animate = this.animate.bind(this);
@@ -156,7 +158,7 @@ class AtelieraApp {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    if (!this.completionManager?.isFinishing) this.fitStudioView();
+    if (!this.completionManager?.isFinishing && !this.explorer?.active) this.fitStudioView();
   }
 
   /* ==========================================================================
@@ -195,7 +197,7 @@ class AtelieraApp {
   }
 
   onPointerDown(e) {
-    if (this.isDrawing || this.isDrawingBlocked || e.button !== 0) return;
+    if (this.explorer?.active || this.isDrawing || this.isDrawingBlocked || e.button !== 0) return;
 
     const tInputStart = performance.now();
     const ptrVec = this.getNormalizedPointer(e);
@@ -673,6 +675,7 @@ class AtelieraApp {
       this.environment.update(delta);
     }
 
+    this.explorer?.update(delta);
     if (this.controls.enabled) this.controls.update();
     this.volumeRenderer.flush();
     this.renderer.render(this.scene, this.camera);

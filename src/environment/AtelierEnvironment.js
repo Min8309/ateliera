@@ -36,7 +36,12 @@ export class AtelierEnvironment {
     this.box(12, .5, .2, 0, -1.35, -3.3, this.wallMaterial);
     this.box(1.4, 4.6, .2, -5.3, 1.2, -3.3, this.wallMaterial);
     this.box(1.4, 4.6, .2, 5.3, 1.2, -3.3, this.wallMaterial);
-    this.box(.2, 5.5, 10, -6, 1.15, .5, this.wallMaterial);
+    // Left wall leaves a real doorway to the adjoining materials room.
+    this.box(.2, 5.5, 4.62, -6, 1.15, -2.09, this.wallMaterial);
+    this.box(.2, 5.5, 3.12, -6, 1.15, 3.94, this.wallMaterial);
+    this.box(.2, 2.65, 2.16, -6, 2.625, 1.3, this.wallMaterial);
+    this.backWall = this.box(12, 5.5, .2, 0, 1.15, 5.5, this.wallMaterial);
+    this.backWall.visible = false; // The mobile painting camera sits outside the room.
     this.box(.2, 5.5, 10, 6, 1.15, .5, this.wallMaterial);
     this.box(12, .15, 10, 0, 3.95, .5, this.wallMaterial);
     const floorMaterials = ['#9a7656', '#a78361', '#957354', '#b18b68'].map(color =>
