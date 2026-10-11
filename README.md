@@ -2,6 +2,9 @@
 > **"Trace to Space (붓질의 궤적이 머무는 가상 갤러리)"**  
 > 창밖으로 한강과 서울 스카이라인이 보이는 작업실에서 수채화 느낌으로 창작한 뒤, 3D 액자를 결합해 완성하고 타임랩스로 궤적을 되짚어보는 Three.js 기반 인터랙티브 디지털 페인팅 플랫폼입니다.
 
+
+[Ateliera-overview.pptx](https://github.com/user-attachments/files/33293893/Ateliera-overview.pptx)
+
 ---
 
 ## ✨ 핵심 아키텍처 및 주요 기능
