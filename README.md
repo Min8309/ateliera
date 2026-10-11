@@ -155,3 +155,26 @@ MIT License © 2026 Ateliera Project
 - HTML: `public/presentation/Ateliera-overview.html`은 이미지가 포함된 독립 파일입니다. 웹 소개 페이지 `index.html`은 서버에서 PPT 다운로드와 앱 이동도 지원합니다.
 - 자료 업데이트: Python 패키지 `python-pptx`, `Pillow` 설치 후 `python3 scripts/build-presentation.py` 실행. 화면 이미지는 `public/presentation/assets/`에 있습니다.
 - 가격·외부 판매처 연결은 보류 상태이며, 실제 주문·결제 기능은 제공하지 않는 것으로 명시했습니다.
+
+### Vercel 배포 · 발표용 공유 링크
+`vercel.json`은 Vite 앱을 `npm run build:demo`로 빌드하고 `dist`를 배포하도록 설정합니다. 앱과 소개 자료, 오프라인 발표 파일을 함께 제공합니다.
+
+1. Vercel에 GitHub 계정으로 로그인합니다.
+2. Add New → Project에서 `Min8309/ateliera`를 Import합니다.
+3. Framework Preset **Vite**, Root Directory **저장소 루트**, Production Branch **main**으로 Deploy합니다. 빌드 설정은 `vercel.json`에 포함되어 있습니다.
+
+배포 후 접속 경로:
+- `/`: 3D 화실 앱
+- `/presentation/index.html`: 컨셉과 핵심 기능 소개
+- `/presentation/Ateliera-overview.pptx`: 발표 자료
+- `/ateliera-demo.html`: 외부 JS·이미지·폰트 다운로드 없이 실행 가능한 단일 HTML 앱. 다운로드 후 최신 Chrome/Edge에서 직접 열어 오프라인 시연할 수 있습니다.
+
+`main`에 수정사항을 올리면 Vercel이 최신 소스를 다시 빌드합니다. 공유 링크는 인터넷이 필요하며, 발표자는 서버 관리 화면에 접속하지 않고 링크만 열면 됩니다. 로컬 HTML 실행은 해당 기기의 브라우저 정책과 WebGL 지원에 따라 제한될 수 있습니다. 저장 데이터는 브라우저·실행 주소별로 분리됩니다.
+
+로컬 확인:
+```bash
+npm ci
+npm run build:demo
+npm run preview -- --host 0.0.0.0
+```
+오프라인 배포본을 별도로 갱신하려면 `npm run build:demo` 후 `deploy/ateliera-demo.html`도 소스와 함께 저장합니다. Vercel은 빌드 시 최신 파일을 생성합니다.
