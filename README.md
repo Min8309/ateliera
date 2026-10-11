@@ -178,3 +178,5 @@ npm run build:demo
 npm run preview -- --host 0.0.0.0
 ```
 오프라인 배포본을 별도로 갱신하려면 `npm run build:demo` 후 `deploy/ateliera-demo.html`도 소스와 함께 저장합니다. Vercel은 빌드 시 최신 파일을 생성합니다.
+
+독립 HTML 소개 자료는 PPT 파일도 포함하여 상대 경로 없이 다운로드할 수 있습니다. 채팅 미리보기의 다운로드 제한이 있으면 소개 자료 하단의 **PPT 직접 다운로드** 또는 GitHub 파일 다운로드를 사용하세요.
