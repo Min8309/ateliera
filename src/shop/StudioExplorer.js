@@ -43,16 +43,19 @@ export class StudioExplorer {
       this.saveCart();
     });
     window.addEventListener('keydown', event => {
-      if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
+      if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName) || event.target.isContentEditable) return;
       if ((event.code === 'ShiftLeft' || event.code === 'ShiftRight') && !event.repeat && !this.app.isDrawingBlocked) {
         event.preventDefault();
         if (this.cartDialog.open) this.cartDialog.close(); else this.openCart();
         return;
       }
-      if (!this.active || this.modalOpen()) return;
+      if (this.app.isDrawingBlocked || this.modalOpen()) return;
       if (['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code)) {
-        event.preventDefault();this.keys.add(event.code);
+        event.preventDefault();
+        if (!this.active) this.enter({preserveView:true});
+        this.keys.add(event.code);
       }
+      if (!this.active) return;
       if (event.code === 'KeyE' && this.target && !event.repeat) this.inspect(this.target);
       if (event.code === 'Escape') this.leave();
     });
@@ -134,13 +137,21 @@ export class StudioExplorer {
     this.tooltip.style.left = `${Math.max(8, Math.min(innerWidth-this.tooltip.offsetWidth-8, x+16))}px`;
     this.tooltip.style.top = `${Math.max(8, Math.min(innerHeight-this.tooltip.offsetHeight-8, y+16))}px`;
   }
-  enter() {
+  enter({preserveView=false} = {}) {
     if (this.app.isDrawingBlocked || this.active) return;
     this.app.onPointerUp();this.active = true;this.app.controls.enabled = false;
     document.body.classList.add('exploring');this.app.environment.backWall.visible = true;
     document.getElementById('btn-explore').textContent = '그리기 모드';
     this.app.camera.fov = innerWidth < 680 ? 75 : 54;this.app.camera.updateProjectionMatrix();
-    this.app.camera.position.set(0,.1,3.8);this.yaw = .9;this.pitch = 0;this.applyLook();
+    if (preserveView) {
+      const look = new THREE.Euler().setFromQuaternion(this.app.camera.quaternion, 'YXZ');
+      this.yaw = look.y;this.pitch = THREE.MathUtils.clamp(look.x,-.95,.95);
+      const position = this.app.camera.position;
+      position.set(THREE.MathUtils.clamp(position.x,-10.6,5.6),.1,THREE.MathUtils.clamp(position.z,-2.9,5.1));
+    } else {
+      this.app.camera.position.set(0,.1,3.8);this.yaw = .9;this.pitch = 0;
+    }
+    this.applyLook();
     this.status.textContent = '왼쪽 문을 선택하면 미술용품실이 열립니다.';
   }
   visitShop() {
