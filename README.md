@@ -148,3 +148,10 @@ MIT License © 2026 Ateliera Project
 - **이젤로 돌아가 그리기** / 이동 모드의 Esc로 기존 브러시 작업에 복귀합니다. 창이 열려 있으면 Esc는 창만 닫습니다.
 
 진열 용품은 예시이며 현재 실제 가격·외부 구매 링크는 보류 중입니다. 실제 주문이나 결제는 진행되지 않습니다.
+
+### 프로젝트 소개 자료
+- 웹 소개: 개발 서버에서 `/presentation/index.html`을 열면 컨셉과 핵심 기능을 확인할 수 있습니다.
+- PPT: `public/presentation/Ateliera-overview.pptx` (9장, 한국어, 현재 앱 화면 포함).
+- HTML: `public/presentation/Ateliera-overview.html`은 이미지가 포함된 독립 파일입니다. 웹 소개 페이지 `index.html`은 서버에서 PPT 다운로드와 앱 이동도 지원합니다.
+- 자료 업데이트: Python 패키지 `python-pptx`, `Pillow` 설치 후 `python3 scripts/build-presentation.py` 실행. 화면 이미지는 `public/presentation/assets/`에 있습니다.
+- 가격·외부 판매처 연결은 보류 상태이며, 실제 주문·결제 기능은 제공하지 않는 것으로 명시했습니다.
