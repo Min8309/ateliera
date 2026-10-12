@@ -12,6 +12,8 @@
 
 import * as THREE from 'three';
 import { Aji } from './pet/Aji.js';
+import { MobileBrushPanel } from './workspace/MobileBrushPanel.js';
+import { keepCameraAboveFloor } from './workspace/CameraBounds.js';
 import { TouchControls } from './workspace/TouchControls.js';
 import { PaintingWorkspace } from './workspace/PaintingWorkspace.js';
 import { StudioExplorer } from './shop/StudioExplorer.js';
@@ -85,6 +87,7 @@ class AtelieraApp {
     this.workspace = new PaintingWorkspace(this);
     this.workspace.reset();
     this.touchControls=new TouchControls(this);
+    this.mobileBrushPanel=new MobileBrushPanel(this);
     this.aji=new Aji(this);
 
     // 렌더 루프 가동
@@ -150,6 +153,8 @@ class AtelieraApp {
       RIGHT: THREE.MOUSE.ROTATE        // 우클릭: 뷰 회전
     };
 
+    // Single-finger painting and two-finger workspace gestures own touch input.
+    this.controls.touches = { ONE:null, TWO:null };
     this.fitStudioView();
     this.raycaster = new THREE.Raycaster();
 
@@ -421,6 +426,7 @@ class AtelieraApp {
 
     toolTabs.forEach(tab => {
       tab.addEventListener('click', () => {
+        if(this.mobileBrushPanel&&this.brush.tool===tab.getAttribute('data-tool'))return;
         toolTabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
 
@@ -691,7 +697,9 @@ class AtelieraApp {
 
     this.aji?.update(delta);
     this.explorer?.update(delta);
+    keepCameraAboveFloor(this.camera,this.controls);
     if (this.controls.enabled) this.controls.update();
+    keepCameraAboveFloor(this.camera,this.controls);
     this.volumeRenderer.flush();
     this.renderer.render(this.scene, this.camera);
   }

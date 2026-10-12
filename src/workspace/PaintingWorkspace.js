@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ArtworkRepository, artworkDate, ARTWORK_LIMIT } from './ArtworkRepository.js';
+import { keepCameraAboveFloor } from './CameraBounds.js';
 import { CANVAS_PRESETS } from '../drawing/CanvasPresets.js';
 
 export class PaintingWorkspace {
@@ -76,13 +77,20 @@ export class PaintingWorkspace {
     const studio=document.querySelector('.studio-panel'),storage=document.getElementById('artwork-storage');
     const left=getComputedStyle(studio).display!=='none'&&width>800?studio.getBoundingClientRect().right+12:12;
     const right=getComputedStyle(storage).display!=='none'&&width>800?storage.getBoundingClientRect().left-12:width-12;
-    const top=width>800?90:140,bottom=document.querySelector('.drawing-dock').getBoundingClientRect().top-12;
+    const compact=matchMedia('(max-width: 800px), (pointer: coarse)').matches;
+    const top=compact?(height<500?70:140):90;
+    let bottom=document.querySelector('.drawing-dock').getBoundingClientRect().top-12;
+    for(const selector of ['.touch-mode-controls','#brush-settings']){
+      const element=document.querySelector(selector);
+      const display=getComputedStyle(element).display,rect=element.getBoundingClientRect();
+      if(display!=='none'&&display!=='contents'&&rect.height>0)bottom=Math.min(bottom,rect.top-12);
+    }
     const freeWidth=Math.max(100,right-left),freeHeight=Math.max(100,bottom-top);
     // Shift the projection toward the free painting area while the room fills the screen.
     this.app.camera.setViewOffset(width,height,width/2-(left+right)/2,height/2-(top+bottom)/2,width,height);
     const distance=Math.max(2.6*height/freeHeight,2.6*height/freeWidth)/this.zoom;
     this.app.controls.maxDistance=Math.max(6,distance*1.5);
-    this.app.controls.target.set(0,-this.pan,0);this.app.camera.position.set(0,-this.pan,distance);this.app.controls.update();
+    this.app.controls.target.set(0,-this.pan,0);this.app.camera.position.set(0,-this.pan,distance);keepCameraAboveFloor(this.app.camera,this.app.controls);this.app.controls.update();
     document.getElementById('view-zoom').value=this.zoom;document.getElementById('view-pan').value=this.pan;
     document.getElementById('view-percent').textContent=`${Math.round(this.zoom*100)}%`;
   }

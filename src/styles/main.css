@@ -947,3 +947,41 @@ body.touch-enabled .exploration-controls .walk-buttons { display:none; }
 .aji-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; }
 .aji-actions button { min-height:44px; }
 @media(max-width:680px) { .aji-toggle { top:142px; font-size:.65rem; padding:8px; } }
+
+/* A single brush row leaves the mobile studio visible; settings open on demand. */
+.brush-settings { display:contents; }
+.brush-settings-header { display:none; }
+@media (max-width:800px), (pointer:coarse) {
+ body:not(.exploring) .drawing-dock {
+  left:8px; right:8px; bottom:calc(8px + env(safe-area-inset-bottom,0px)); width:calc(100vw - 16px);
+  padding:6px; gap:0; max-height:none; overflow:visible; flex-wrap:nowrap; border-radius:12px; backdrop-filter:none; -webkit-backdrop-filter:none;
+ }
+ .tool-mode-group { display:flex; flex-wrap:nowrap; justify-content:flex-start; width:100%; gap:4px; border:0; padding:0; overflow-x:auto; scrollbar-width:none; touch-action:pan-x; }
+ .tool-mode-group::-webkit-scrollbar { display:none; }
+ .btn-tool-tab { flex:0 0 auto; min-height:44px; padding:8px 10px; font-size:.7rem; }
+ .brush-settings { display:none; position:fixed; left:8px; right:8px; bottom:calc(var(--drawing-dock-height,58px) + 20px + env(safe-area-inset-bottom,0px)); max-height:min(440px,calc(100dvh - 150px)); overflow-y:auto; padding:14px; border:1px solid #899373; border-radius:14px; background:#25352ff5; box-shadow:0 8px 28px #0005; }
+ body.brush-settings-open:not(.exploring) .brush-settings { display:flex; flex-wrap:wrap; gap:14px; }
+ .brush-settings-header { display:flex; align-items:center; justify-content:space-between; width:100%; gap:12px; font-size:.8rem; }
+ #close-brush-settings { min-height:44px; padding:8px 14px; border:1px solid #8d9b76; border-radius:8px; color:#f5eedd; background:#43513c; font:inherit; }
+ .brush-settings .palette-group { width:100%; max-width:none; padding:0; border:0; gap:10px; }
+ .brush-settings .color-swatch,.brush-settings .custom-picker-wrap { width:30px; height:30px; }
+ .brush-settings .neon-palette { gap:10px; }
+ .brush-settings .slider-group { width:100%; padding:0; border:0; display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-start; }
+ .brush-settings .slider-item { flex:1 1 120px; }
+ .brush-settings input[type=range] { width:100%; min-height:32px; }
+ .brush-settings .history-btn-group { width:100%; justify-content:flex-end; border:0; padding:0; }
+ .brush-settings .btn-history { min-width:44px; min-height:44px; }
+ body.touch-enabled.brush-settings-open .touch-mode-controls { display:none!important; }
+ body:not(.exploring) .studio-panel { display:none; }
+ body:not(.exploring) .settings-toggle { display:block; }
+ body:not(.exploring) .studio-panel.mobile-open { display:block; top:137px; left:12px; z-index:32; max-height:55vh; }
+ body:not(.exploring) .finish-dock { top:15px; bottom:auto; right:155px; }
+ body:not(.exploring) .btn-finish { font-size:.6rem; padding:7px; }
+ .touch-mode-controls { bottom:calc(var(--drawing-dock-height,58px) + 18px + env(safe-area-inset-bottom,0px)); }
+}
+@media (max-width:800px), (pointer:coarse) {
+ body.brush-settings-open:not(.exploring) .drawing-dock { z-index:40; }
+}
+@media (orientation:landscape) and (max-height:500px) {
+ .brush-settings { max-height:44dvh; }
+}

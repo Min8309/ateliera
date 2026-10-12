@@ -151,6 +151,7 @@ export class StudioExplorer {
   enter({preserveView=false} = {}) {
     if (this.app.isDrawingBlocked || this.active) return;
     this.app.touchControls?.cancelGesture();
+    this.app.mobileBrushPanel?.setOpen(false);
     this.app.onPointerUp();this.active = true;this.app.controls.enabled = false;
     this.app.camera.clearViewOffset();
     this.app.touchControls?.updateMode();
