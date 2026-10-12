@@ -127,6 +127,25 @@
     <p>이 장바구니는 화실 안의 선택 목록입니다. 실제 주문이나 결제는 진행되지 않습니다.</p>
   </dialog>
 
+  <section class="painting-view-controls" aria-label="캔버스 확대와 이동">
+    <button id="view-zoom-out" aria-label="축소">−</button>
+    <input id="view-zoom" type="range" min="1" max="4" step="0.05" value="1" aria-label="캔버스 확대 배율">
+    <span id="view-percent">100%</span><button id="view-zoom-in" aria-label="확대">＋</button>
+    <button id="view-reset">전체 보기</button>
+    <label>위·아래 <input id="view-pan" type="range" min="-1.2" max="1.2" step="0.02" value="0" aria-label="캔버스 위아래 이동"></label>
+    <small>휠: 위아래 이동 · Ctrl/⌘+휠: 확대</small>
+  </section>
+  <button id="toggle-studio-settings" class="settings-toggle">작업실 설정</button>
+  <button id="toggle-storage" class="storage-toggle" aria-expanded="false" aria-controls="artwork-storage">작품 보관함</button>
+  <aside id="artwork-storage" aria-label="10장 작품 보관함">
+    <h2>나의 작품 보관대 <span id="storage-count">0 / 10</span></h2>
+    <label>제목 <input id="saved-title" maxlength="80" placeholder="그림 제목"></label>
+    <label>그림 날짜 <input id="saved-date" type="date"></label>
+    <button id="save-artwork">현재 그림 보관</button>
+    <p id="storage-status" role="status" aria-live="polite"></p>
+    <p class="storage-note">이 브라우저에 저장됩니다. 중요한 작업은 JSON 내보내기도 함께 사용해 주세요.</p>
+    <div id="stored-artworks"></div>
+  </aside>
   <!-- 화면 우측 상단 액션 컨트롤 패널 -->
   <aside class="action-control-panel">
     <button id="btn-clear" aria-label="캔버스 초기화" class="panel-btn danger" title="캔버스 및 스트로크 데이터 초기화">
@@ -143,7 +162,7 @@
   <!-- 화면 우측 하단 완성하기 버튼 -->
   <div class="finish-dock">
     <button id="btn-finish" class="btn-finish" title="작품에 서명하고 3D 액자를 씌워 완성합니다">
-      ✨ Finish Artwork (완성하기)
+      ✨ 작품 완성
     </button>
   </div>
 
@@ -157,7 +176,7 @@
   <footer class="controls-hint">
     <span>🖱️ <strong>좌클릭</strong>: 수채화 드로잉</span>
     <span>🖱️ <strong>우클릭</strong>: 3D 작업실 둘러보기</span>
-    <span>🔍 <strong>휠</strong>: 줌</span>
+    <span>🔍 <strong>휠</strong>: 위·아래 이동</span>
     <span>⌨️ <strong>WASD / 방향키</strong>: 화실 이동</span>
   </footer>
 

@@ -43,6 +43,7 @@ export class StudioExplorer {
       this.saveCart();
     });
     window.addEventListener('keydown', event => {
+      if(event.code==='Escape'&&document.getElementById('artwork-storage').classList.contains('mobile-open')){document.getElementById('artwork-storage').classList.remove('mobile-open');return;}
       if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName) || event.target.isContentEditable) return;
       if ((event.code === 'ShiftLeft' || event.code === 'ShiftRight') && !event.repeat && !this.app.isDrawingBlocked) {
         event.preventDefault();
@@ -105,6 +106,7 @@ export class StudioExplorer {
     document.getElementById('btn-inspect-object').addEventListener('click', () => { if (this.target) this.inspect(this.target); });
     this.colliders = [
       ...this.room.colliders,
+      new THREE.Box3(new THREE.Vector3(3.85,-1.55,1.3),new THREE.Vector3(5.75,1.2,2.3)),
       new THREE.Box3(new THREE.Vector3(-4.65,-1.55,-1.1),new THREE.Vector3(-2.95,0,-.2)),
       new THREE.Box3(new THREE.Vector3(2.9,-1.55,-2.5),new THREE.Vector3(4.85,0,-1.7)),
       new THREE.Box3(new THREE.Vector3(3.85,-1.55,-2.8),new THREE.Vector3(5.05,1.2,-2.1)),
@@ -112,7 +114,7 @@ export class StudioExplorer {
     ];
   }
 
-  modalOpen() { return this.productDialog.open || this.cartDialog.open || this.helpDialog.open; }
+  modalOpen() { return this.productDialog.open || this.cartDialog.open || this.helpDialog.open || document.getElementById('artwork-storage').classList.contains('mobile-open'); }
   openCart() {
     this.keys.clear();this.drag = null;this.hideTooltip();
     this.productDialog.close();this.helpDialog.close();
@@ -185,6 +187,7 @@ export class StudioExplorer {
     return null;
   }
   inspect(data) {
+    if(data.type==='storage'){this.keys.clear();document.getElementById('artwork-storage').classList.add('mobile-open');return;}
     this.keys.clear();this.hideTooltip();
     if (data.type === 'door') {
       this.room.openDoor();this.status.textContent = '문이 열렸습니다. 안으로 걸어 들어가세요.';

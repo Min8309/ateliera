@@ -162,8 +162,8 @@ export class CompletionManager {
       previewUrl: dataUrl
     };
 
-    // 로컬 스토리지에 아틀리에라 갤러리 컬렉션으로 보관
-    try {
+    // Legacy fallback; the current workspace stores up to ten works in IndexedDB.
+    if (!this.context.onArtworkCompleted) try {
       const storageKey = 'ateliera_gallery_artworks';
       const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
       existing.unshift(artwork);
@@ -172,6 +172,7 @@ export class CompletionManager {
       console.warn('LocalStorage 저장 공간 초과 가능성:', err);
     }
 
+    this.context.onArtworkCompleted?.(artwork);
     return artwork;
   }
 

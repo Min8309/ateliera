@@ -864,3 +864,50 @@ body.exploring .drawing-dock, body.exploring .finish-dock, body.exploring .contr
 .controls-table td, .controls-table th { padding:10px 8px; border:1px solid #d1c2aa; text-align:left; line-height:1.6; }
 .controls-table th { background:#e6dcc8; }
 .controls-table td:first-child { width:38%; font-weight:600; }
+
+/* Drawing uses its own viewport; tools never overlap the painting area. */
+body:not(.exploring) #webgl-canvas { position:fixed; left:285px; top:var(--painting-view-top,205px); width:calc(100vw - 560px); height:calc(100vh - var(--painting-view-top,205px) - 20px - var(--drawing-dock-height,170px)); }
+.painting-view-controls { position:fixed; left:285px; right:275px; top:128px; z-index:15; display:flex; flex-wrap:wrap; align-items:center; gap:7px; font-size:.7rem; background:#29392fee; border-radius:10px; padding:9px; }
+.painting-view-controls input[type=range] { width:95px; }
+.painting-view-controls small { width:100%; color:#b9c8bc; }
+.painting-view-controls button,#artwork-storage button,.storage-toggle { cursor:pointer; font:inherit; background:#43513c; color:#f5eedd; border:1px solid #82916c; border-radius:6px; padding:6px 9px; }
+#artwork-storage { position:fixed; z-index:16; right:14px; top:115px; bottom:calc(var(--drawing-dock-height,170px) + 35px); width:245px; overflow:auto; background:#25352fed; border:1px solid #899373; border-radius:12px; padding:12px; }
+#artwork-storage h2 { font-size:.85rem; margin:0 0 12px; }
+#storage-count { font-size:.7rem; color:#dbc49e; }
+#artwork-storage label { display:block; font-size:.7rem; margin:6px 0; }
+#artwork-storage input { width:100%; border:1px solid #66725d; border-radius:5px; padding:6px; background:#172923; color:#f5eedd; font:inherit; }
+#storage-status,.storage-note { font-size:.65rem; line-height:1.5; }
+.stored-artwork { padding:10px 0; border-top:1px solid #66725d; display:grid; gap:5px; grid-template-columns:1fr 1fr; }
+.stored-artwork img { width:100%; max-height:120px; object-fit:contain; grid-column:1/-1; background:#f5eee1; }
+.stored-artwork input { grid-column:1/-1; font-size:.7rem!important; }
+.stored-artwork button { font-size:.68rem!important; }
+.storage-toggle { position:fixed; top:85px; right:16px; z-index:30; font-size:.7rem; }
+body.exploring .painting-view-controls,body.exploring #artwork-storage:not(.mobile-open) { display:none; }
+body.exploring #artwork-storage.mobile-open { display:block; }
+body:not(.exploring) .finish-dock { bottom:10px; right:15px; }
+body:not(.exploring) .controls-hint { display:none; }
+body:not(.exploring) .studio-panel { top:145px; max-height:calc(100vh - 160px - var(--drawing-dock-height,170px)); overflow:auto; }
+body:not(.exploring) .performance-hud { display:none; }
+body:not(.exploring) .drawing-dock { left:14px; transform:none; right:15px; width:calc(100vw - 210px); max-width:none; bottom:10px; padding:12px; }
+@media(max-width:1100px) {
+ body:not(.exploring) #webgl-canvas { left:260px; width:calc(100vw - 525px); }
+ .painting-view-controls { left:260px; }
+}
+@media(max-width:800px) {
+ body:not(.exploring) #webgl-canvas { left:12px; top:var(--painting-view-top,225px); width:calc(100vw - 24px); height:calc(100vh - var(--painting-view-top,225px) - 25px - var(--drawing-dock-height,220px)); min-height:0; }
+ .painting-view-controls { left:12px; right:12px; top:137px; }
+ body:not(.exploring) .studio-panel { display:none; }
+ #artwork-storage { display:none; top:120px; bottom:20px; width:min(300px,calc(100vw - 28px)); }
+ #artwork-storage.mobile-open { display:block; }
+ body:not(.exploring) .drawing-dock { width:calc(100vw - 28px); max-height:32vh; overflow:auto; }
+ body:not(.exploring) .finish-dock { bottom:calc(var(--drawing-dock-height,220px) + 15px); right:16px; }
+ .storage-toggle { top:97px; }
+}
+
+.settings-toggle { display:none; position:fixed; top:97px; left:14px; z-index:30; background:#43513c; color:#f5eedd; border:1px solid #82916c; border-radius:6px; padding:6px 9px; font:inherit; font-size:.7rem; }
+@media(max-width:800px) {
+ body:not(.exploring) .settings-toggle { display:block; }
+ body:not(.exploring) .studio-panel.mobile-open { display:block; top:137px; left:12px; z-index:32; max-height:55vh; }
+ body:not(.exploring) .finish-dock { top:15px; bottom:auto; right:155px; }
+ body:not(.exploring) .btn-finish { font-size:.6rem; padding:7px; }
+}

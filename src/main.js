@@ -11,6 +11,7 @@
  */
 
 import * as THREE from 'three';
+import { PaintingWorkspace } from './workspace/PaintingWorkspace.js';
 import { StudioExplorer } from './shop/StudioExplorer.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AtelierEnvironment } from './environment/AtelierEnvironment.js';
@@ -69,6 +70,7 @@ class AtelieraApp {
       frameBuilder: this.frameBuilder,
       getStrokes: () => this.currentArtwork.strokes,
       getArtworkImage: () => this.volumeRenderer.exportPNG(this.renderer, this.dualCanvas, this.drawingPlane),
+      onArtworkCompleted: artwork => this.workspace?.save(artwork),
       setDrawingBlocked: this.setDrawingBlocked.bind(this)
     });
 
@@ -78,6 +80,8 @@ class AtelieraApp {
     this.initHUD();
     this.bindPointerEvents();
     this.explorer = new StudioExplorer(this);
+    this.workspace = new PaintingWorkspace(this);
+    this.workspace.reset();
 
     // 렌더 루프 가동
     this.animate = this.animate.bind(this);
@@ -100,7 +104,8 @@ class AtelieraApp {
       antialias: true,
       powerPreference: 'high-performance'
     });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    const rect = this.canvasEl.getBoundingClientRect();
+    this.renderer.setSize(Math.max(1,rect.width),Math.max(1,rect.height),false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -147,6 +152,7 @@ class AtelieraApp {
   }
 
   fitStudioView() {
+    if(this.workspace && !this.explorer?.active){this.workspace.reset();return;}
     const distance = Math.max(4.1, 4.1 / this.camera.aspect);
     this.camera.position.set(0, .3, distance);
     this.controls.maxDistance = Math.max(6, distance * 1.3);
@@ -155,10 +161,12 @@ class AtelieraApp {
   }
 
   onResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    if (!this.completionManager?.isFinishing && !this.explorer?.active) this.fitStudioView();
+    const rect=this.canvasEl.getBoundingClientRect();
+    this.camera.aspect=Math.max(1,rect.width)/Math.max(1,rect.height);this.camera.updateProjectionMatrix();
+    this.renderer.setSize(Math.max(1,rect.width),Math.max(1,rect.height),false);
+    if(!this.completionManager?.isFinishing&&!this.explorer?.active){
+      if(this.workspace)this.workspace.applyView();else this.fitStudioView();
+    }
   }
 
   /* ==========================================================================
