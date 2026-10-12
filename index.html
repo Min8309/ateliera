@@ -145,6 +145,17 @@
   </section>
   <button id="toggle-studio-settings" class="settings-toggle">작업실 설정</button>
   <button id="toggle-storage" class="storage-toggle" aria-expanded="false" aria-controls="artwork-storage">작품 보관함</button>
+  <button id="open-aji" class="aji-toggle">🐾 아지 돌보기</button>
+  <dialog id="aji-dialog" class="shop-dialog" aria-labelledby="aji-title">
+    <button id="close-aji" class="shop-close" aria-label="아지 돌보기 닫기">✕</button>
+    <span class="shop-eyebrow">MY ATELIER COMPANION</span><h2 id="aji-title">검정 포메라니안 · 아지</h2>
+    <p id="aji-emotion" aria-live="polite"></p>
+    <label>포만감 <span id="aji-fullness-label"></span><progress id="aji-fullness" max="100"></progress></label>
+    <label>기분 <span id="aji-happiness-label"></span><progress id="aji-happiness" max="100"></progress></label>
+    <label>에너지 <span id="aji-energy-label"></span><progress id="aji-energy" max="100"></progress></label>
+    <div class="aji-actions"><button data-aji-action="feed">밥 주기</button><button data-aji-action="pet">쓰다듬기</button><button data-aji-action="play">놀아주기</button><button data-aji-action="sleep">잠 재우기</button></div>
+    <p id="aji-message" role="status"></p><p>아지나 밥그릇을 클릭·터치해도 돌볼 수 있어요. 상태는 이 브라우저에 저장됩니다.</p>
+  </dialog>
   <dialog id="stored-artwork-dialog" class="shop-dialog artwork-preview-dialog" aria-labelledby="stored-preview-title">
     <button id="close-stored-preview" class="shop-close" aria-label="작품 미리보기 닫기">✕</button>
     <h2 id="stored-preview-title"></h2><p id="stored-preview-date"></p>

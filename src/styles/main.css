@@ -940,3 +940,10 @@ body.touch-enabled .exploration-controls .walk-buttons { display:none; }
 #artwork-storage.mobile-open { display:block; z-index:32; }
 .artwork-preview-dialog { width:min(760px,calc(100vw - 32px)); }
 #stored-preview-image { display:block; width:100%; max-height:58vh; object-fit:contain; background:#f4efe3; border-radius:8px; margin:12px 0; }
+
+.aji-toggle { position:fixed; top:128px; right:16px; z-index:30; background:#273e32e8; color:#f5eedd; border:1px solid #a9b58d; border-radius:9px; padding:9px 12px; font:inherit; font-size:.75rem; cursor:pointer; }
+#aji-dialog label { display:block; font-size:.83rem; margin:14px 0; }
+#aji-dialog progress { display:block; width:100%; height:12px; margin:5px 0; accent-color:#b8cd94; }
+.aji-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; }
+.aji-actions button { min-height:44px; }
+@media(max-width:680px) { .aji-toggle { top:142px; font-size:.65rem; padding:8px; } }

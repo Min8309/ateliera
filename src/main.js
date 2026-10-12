@@ -11,6 +11,7 @@
  */
 
 import * as THREE from 'three';
+import { Aji } from './pet/Aji.js';
 import { TouchControls } from './workspace/TouchControls.js';
 import { PaintingWorkspace } from './workspace/PaintingWorkspace.js';
 import { StudioExplorer } from './shop/StudioExplorer.js';
@@ -84,6 +85,7 @@ class AtelieraApp {
     this.workspace = new PaintingWorkspace(this);
     this.workspace.reset();
     this.touchControls=new TouchControls(this);
+    this.aji=new Aji(this);
 
     // 렌더 루프 가동
     this.animate = this.animate.bind(this);
@@ -212,6 +214,7 @@ class AtelieraApp {
 
     const tInputStart = performance.now();
     const ptrVec = this.getNormalizedPointer(e);
+    if(this.aji&&this.explorer.findTarget(ptrVec)?.type==='pet')return;
     const hit = this.raycastPoint(ptrVec);
 
     if (hit && hit.uv) {
@@ -686,6 +689,7 @@ class AtelieraApp {
       this.environment.update(delta);
     }
 
+    this.aji?.update(delta);
     this.explorer?.update(delta);
     if (this.controls.enabled) this.controls.update();
     this.volumeRenderer.flush();

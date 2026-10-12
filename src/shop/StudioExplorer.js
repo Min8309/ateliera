@@ -44,7 +44,7 @@ export class StudioExplorer {
       this.saveCart();
     });
     window.addEventListener('keydown', event => {
-      if(event.code==='Escape'&&!this.app.workspace?.previewDialog?.open&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open&&document.getElementById('artwork-storage').classList.contains('mobile-open')){document.getElementById('artwork-storage').classList.remove('mobile-open');return;}
+      if(event.code==='Escape'&&!this.app.aji?.dialog?.open&&!this.app.workspace?.previewDialog?.open&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open&&document.getElementById('artwork-storage').classList.contains('mobile-open')){document.getElementById('artwork-storage').classList.remove('mobile-open');return;}
       if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName) || event.target.isContentEditable) return;
       if(event.ctrlKey||event.metaKey||event.altKey)return;
       if ((event.code === 'ShiftLeft' || event.code === 'ShiftRight') && !event.repeat && !this.app.isDrawingBlocked) {
@@ -52,7 +52,7 @@ export class StudioExplorer {
         if (this.cartDialog.open) this.cartDialog.close(); else this.openCart();
         return;
       }
-      if(!event.repeat&&event.code==='KeyG'&&!this.app.workspace?.previewDialog?.open&&!this.app.isDrawingBlocked&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open){event.preventDefault();document.getElementById('toggle-storage').click();return;}
+      if(!event.repeat&&event.code==='KeyG'&&!this.app.aji?.dialog?.open&&!this.app.workspace?.previewDialog?.open&&!this.app.isDrawingBlocked&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open){event.preventDefault();document.getElementById('toggle-storage').click();return;}
       if (this.app.isDrawingBlocked || this.modalOpen()) return;
       if(!event.repeat&&event.code==='KeyH'){event.preventDefault();document.getElementById('btn-space-help').click();return;}
       if(!event.repeat&&event.code==='KeyM'){event.preventDefault();this.visitShop();return;}
@@ -122,9 +122,10 @@ export class StudioExplorer {
     ];
   }
 
-  modalOpen() { return this.productDialog.open || this.cartDialog.open || this.helpDialog.open || this.app.workspace?.previewDialog?.open || document.getElementById('artwork-storage').classList.contains('mobile-open'); }
+  modalOpen() { return this.productDialog.open || this.cartDialog.open || this.helpDialog.open || this.app.workspace?.previewDialog?.open || this.app.aji?.dialog?.open || document.getElementById('artwork-storage').classList.contains('mobile-open'); }
   openCart() {
     this.keys.clear();this.drag = null;this.app.touchControls?.stop();this.hideTooltip();
+    this.app.aji?.dialog?.close();
     this.app.workspace?.previewDialog?.close();
     this.productDialog.close();this.helpDialog.close();
     if (!this.cartDialog.open) this.cartDialog.showModal();
@@ -200,6 +201,7 @@ export class StudioExplorer {
     return null;
   }
   inspect(data) {
+    if(data.type==='pet'){this.app.aji?.open();return;}
     if(data.type==='stored-artwork'){this.app.workspace?.openPreview(data.artworkId);return;}
     if(data.type==='easel'){this.leave();return;}
     if(data.type==='storage'){this.app.touchControls?.stop();this.keys.clear();document.getElementById('artwork-storage').classList.add('mobile-open');return;}
