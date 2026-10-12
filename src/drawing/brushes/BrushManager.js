@@ -44,7 +44,7 @@ export class BrushManager {
         defaultSize: 36,
         defaultOpacity: 1.0,
         minSize: 4,
-        maxSize: 120
+        maxSize: 500
       };
     }
 

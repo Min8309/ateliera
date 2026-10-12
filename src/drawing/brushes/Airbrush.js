@@ -7,7 +7,7 @@ export class Airbrush extends BaseBrush {
       defaultSize: 72,
       defaultOpacity: 0.45,
       minSize: 8,
-      maxSize: 180
+      maxSize: 500
     });
   }
 

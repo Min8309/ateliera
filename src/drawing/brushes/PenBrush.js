@@ -12,7 +12,7 @@ export class PenBrush extends BaseBrush {
       defaultSize: 18,
       defaultOpacity: 1.0,
       minSize: 1,
-      maxSize: 60
+      maxSize: 500
     });
   }
 

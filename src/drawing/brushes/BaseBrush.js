@@ -11,7 +11,7 @@ export class BaseBrush {
    * @param {number} [options.defaultSize=32] - 기본 추천 브러시 지름
    * @param {number} [options.defaultOpacity=1.0] - 기본 추천 불투명도
    * @param {number} [options.minSize=1]
-   * @param {number} [options.maxSize=100]
+   * @param {number} [options.maxSize=500]
    */
   constructor(name, options = {}) {
     this.name = name;
@@ -19,7 +19,7 @@ export class BaseBrush {
     this.defaultSize = options.defaultSize ?? 32;
     this.defaultOpacity = options.defaultOpacity ?? 1.0;
     this.minSize = options.minSize ?? 1;
-    this.maxSize = options.maxSize ?? 100;
+    this.maxSize = options.maxSize ?? 500;
 
     // 브러시 팁 오프스크린 캔버스 캐시 (색상/크기별 재사용)
     this.tipCache = new Map();

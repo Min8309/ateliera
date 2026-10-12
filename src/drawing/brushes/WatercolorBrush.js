@@ -12,7 +12,7 @@ export class WatercolorBrush extends BaseBrush {
       defaultSize: 36,
       defaultOpacity: 0.12,
       minSize: 4,
-      maxSize: 100
+      maxSize: 500
     });
   }
 

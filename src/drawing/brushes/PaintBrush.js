@@ -2,7 +2,7 @@ import { BaseBrush } from './BaseBrush.js';
 
 export class PaintBrush extends BaseBrush {
   constructor() {
-    super('paint', { spacingRatio: 0.12, defaultSize: 48, defaultOpacity: 0.9, minSize: 3, maxSize: 140 });
+    super('paint', { spacingRatio: 0.12, defaultSize: 48, defaultOpacity: 0.9, minSize: 3, maxSize: 500 });
   }
 
   getTipCanvas(color) {
