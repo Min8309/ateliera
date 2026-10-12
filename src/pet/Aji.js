@@ -20,40 +20,64 @@ export class Aji {
   }
   sphere(parent,r,x,y,z,material,scale=[1,1,1]){const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,24,16),material);mesh.position.set(x,y,z);mesh.scale.set(...scale);mesh.castShadow=true;parent.add(mesh);return mesh;}
   buildDog(){
-    const fur=new THREE.MeshStandardMaterial({color:'#15161b',roughness:1});const soft=new THREE.MeshStandardMaterial({color:'#25272c',roughness:1});const muzzle=new THREE.MeshStandardMaterial({color:'#77736c',roughness:1});const black=new THREE.MeshStandardMaterial({color:'#080909',roughness:.3});const eye=new THREE.MeshStandardMaterial({color:'#382519',roughness:.2});const white=new THREE.MeshBasicMaterial({color:'#ffefd7'});
-    this.sphere(this.body,.23,0,.32,0,fur,[1.05,1,1.55]);
-    this.addFur(this.body,[0,.32,0],[.24,.23,.35],1800,.045);
-    this.head=new THREE.Group();this.head.position.set(0,.5,.25);this.body.add(this.head);
-    this.sphere(this.head,.205,0,0,0,fur,[1.1,1,1]);
-    this.addFur(this.head,[0,0,0],[.224,.205,.205],1400,.04);
-    this.eyes=[];this.glints=[];
-    for(const x of [-.13,.13]){
-      const ear=new THREE.Mesh(new THREE.ConeGeometry(.088,.19,4),fur);ear.position.set(x,.18,-.015);ear.rotation.z=x<0?.3:-.3;this.head.add(ear);
-      this.sphere(this.head,.058,x*.62,-.05,.165,muzzle,[1,.8,.8]);
-      this.eyes.push(this.sphere(this.head,.044,x*.64,.045,.173,eye,[1,1,.65]));this.glints.push(this.sphere(this.head,.014,x*.64-.011,.06,.203,white));
+    const fur=new THREE.MeshStandardMaterial({color:'#202127',roughness:.92});
+    const grey=new THREE.MeshStandardMaterial({color:'#3c3e46',roughness:.94});
+    const face=new THREE.MeshStandardMaterial({color:'#484b53',roughness:.95});
+    const black=new THREE.MeshStandardMaterial({color:'#08090b',roughness:.22});
+    const eye=new THREE.MeshStandardMaterial({color:'#151318',roughness:.12});
+    const pawWhite=new THREE.MeshStandardMaterial({color:'#eeeae3',roughness:.95});
+    const glint=new THREE.MeshBasicMaterial({color:'#ffffff'});
+    // Continuous softly scalloped surfaces give the plush reference silhouette.
+    // Short overlapping cheek and chest shapes blend into the mane, without wire-like hairs.
+    this.fluff(this.body,.27,[0,.34,-.03],[1.04,1.05,1.22],fur,.045);
+    this.fluff(this.body,.28,[0,.43,.12],[1.12,1.08,.87],grey,.065);
+    this.head=new THREE.Group();this.head.position.set(0,.65,.2);this.body.add(this.head);
+    this.fluff(this.head,.25,[0,0,0],[1.13,1,.91],fur,.045);
+    for(const x of [-1,1]){
+      this.fluff(this.head,.135,[x*.18,-.04,.07],[1,.92,.93],grey,.05);
+      this.fluff(this.head,.12,[x*.13,-.14,.1],[1.08,.78,1],grey,.06);
+      const shape=new THREE.Shape();shape.moveTo(-.065,0);shape.quadraticCurveTo(-.06,.06,-.025,.13);shape.quadraticCurveTo(0,.17,.025,.13);shape.quadraticCurveTo(.06,.06,.065,0);shape.closePath();
+      const geometry=new THREE.ExtrudeGeometry(shape,{depth:.028,bevelEnabled:true,bevelSize:.018,bevelThickness:.015,bevelSegments:4,curveSegments:12,steps:1});
+      const ear=new THREE.Mesh(geometry,fur);ear.position.set(x*.16,.165,-.015);ear.rotation.z=-x*.15;ear.castShadow=true;this.head.add(ear);
+      const inner=new THREE.Mesh(new THREE.ShapeGeometry(shape,12),face);inner.position.set(x*.16,.18,.03);inner.scale.set(.52,.65,1);inner.rotation.z=-x*.15;this.head.add(inner);
     }
-    this.sphere(this.head,.058,0,-.054,.191,muzzle,[1.05,.7,.55]);this.sphere(this.head,.031,0,-.023,.225,black,[1,.8,.7]);
-    this.tongue=this.sphere(this.head,.025,0,-.103,.204,new THREE.MeshStandardMaterial({color:'#d594a0'}),[.8,1,.5]);
-    this.legs=[];for(const x of [-.125,.125])for(const z of [-.2,.2])this.legs.push(this.sphere(this.body,.075,x,.1,z,fur,[.7,1.4,.8]));
-    this.tail=new THREE.Group();this.tail.position.set(0,.44,-.28);this.body.add(this.tail);for(let i=0;i<7;i++){const t=i/6*Math.PI*1.4;this.sphere(this.tail,.055,Math.sin(t)*.1,.08+Math.cos(t)*.09,-.02,soft);this.addFur(this.tail,[Math.sin(t)*.1,.08+Math.cos(t)*.09,-.02],[.055,.055,.055],100,.035);}
-    const collar=new THREE.Mesh(new THREE.TorusGeometry(.155,.014,6,18),new THREE.MeshStandardMaterial({color:'#69523c'}));collar.rotation.x=Math.PI/2;collar.position.set(0,.44,.14);this.body.add(collar);
-    const tag=this.sphere(this.body,.036,0,.39,.31,new THREE.MeshStandardMaterial({color:'#d9b574',metalness:.5,roughness:.4}),[1,1,.2]);
+    this.eyes=[];this.glints=[];
+    for(const x of [-.095,.095]){
+      this.sphere(this.head,.043,x,.025,.212,face,[1.14,1,.5]);
+      this.eyes.push(this.sphere(this.head,.032,x,.027,.237,eye,[1,1,.7]));
+      this.glints.push(this.sphere(this.head,.009,x-.009,.037,.258,glint));
+      this.sphere(this.head,.035,x,.098,.186,grey,[1.25,.55,.45]);
+      this.fluff(this.head,.065,[x*.43,-.069,.237],[1.05,.85,.73],face,.025);
+    }
+    this.sphere(this.head,.033,0,-.046,.299,black,[1.1,.82,.75]);
+    const smile=new THREE.CatmullRomCurve3([new THREE.Vector3(-.063,-.092,.283),new THREE.Vector3(-.03,-.103,.292),new THREE.Vector3(0,-.089,.294),new THREE.Vector3(.03,-.103,.292),new THREE.Vector3(.063,-.092,.283)]);
+    this.head.add(new THREE.Mesh(new THREE.TubeGeometry(smile,20,.0035,6,false),black));
+    this.tongue=this.sphere(this.head,.021,0,-.113,.28,new THREE.MeshStandardMaterial({color:'#b77787'}),[.8,1,.4]);
+    this.legs=[];
+    for(const x of [-.145,.145])for(const z of [-.19,.2]){
+      const leg=new THREE.Group();leg.position.set(x,.1,z);this.body.add(leg);this.legs.push(leg);
+      this.fluff(leg,.073,[0,.044,0],[.92,1.48,.98],grey,.035);
+      const paw=this.sphere(leg,.074,0,-.055,.016,pawWhite,[1,.63,1.13]);paw.name='AjiWhitePawTip';
+      for(const toe of [-.025,.025])this.sphere(leg,.012,toe,-.06,.087,pawWhite,[.75,.8,.5]);
+    }
+    this.tail=new THREE.Group();this.tail.position.set(0,.48,-.29);this.body.add(this.tail);
+    this.fluff(this.tail,.12,[-.055,.08,0],[1,1.28,.9],fur,.07);
+    this.fluff(this.tail,.14,[-.025,.18,.07],[1.06,.84,1.05],grey,.075);
+    this.fluff(this.tail,.115,[.055,.17,.15],[.95,.85,1.12],fur,.07);
+    const collar=new THREE.Mesh(new THREE.TorusGeometry(.17,.009,8,24),new THREE.MeshStandardMaterial({color:'#594938'}));collar.rotation.x=Math.PI/2;collar.position.set(0,.46,.16);this.body.add(collar);
+    this.sphere(this.body,.028,0,.38,.31,new THREE.MeshStandardMaterial({color:'#bda16b',metalness:.5,roughness:.4}),[1,1,.22]);
     const canvas=document.createElement('canvas');canvas.width=256;canvas.height=96;const ctx=canvas.getContext('2d');ctx.fillStyle='#26312ae8';ctx.fillRect(0,0,256,96);ctx.fillStyle='#f7e8cc';ctx.font='44px sans-serif';ctx.textAlign='center';ctx.fillText('아지 🐾',128,65);
     this.bubbleTexture=new THREE.CanvasTexture(canvas);this.bubbleTexture.colorSpace=THREE.SRGBColorSpace;this.bubble=new THREE.Sprite(new THREE.SpriteMaterial({map:this.bubbleTexture,depthTest:true}));this.bubble.position.set(0,.99,0);this.bubble.scale.set(.5,.1875,1);this.group.add(this.bubble);this.bubbleCanvas=canvas;
   }
-  addFur(parent,center,radii,count,length){
-    // Deterministic curved strands blend into the smooth silhouette without tuft-sized lumps.
-    const vertices=[],colors=[];
-    for(let i=0;i<count;i++){
-      const random=v=>{const n=Math.sin(v*127.1+311.7)*43758.5453;return n-Math.floor(n);};
-      const y=1-2*random(i+1),angle=random(i+count)*Math.PI*2,rad=Math.sqrt(1-y*y);
-      const n=new THREE.Vector3(rad*Math.cos(angle),y,rad*Math.sin(angle));
-      const root=new THREE.Vector3(...center).add(new THREE.Vector3(n.x*radii[0],n.y*radii[1],n.z*radii[2]));
-      let previous=root;const size=length*(.65+(i%11)/20);
-      for(let j=1;j<=3;j++){const t=j/3;const point=root.clone().addScaledVector(n,size*t);point.y-=size*.7*t*t;vertices.push(...previous.toArray(),...point.toArray());const shade=.09+(i%7)*.009;colors.push(shade,shade,shade*1.06,shade,shade,shade*1.06);previous=point;}
+  fluff(parent,radius,center,scale,material,amount){
+    const geometry=new THREE.SphereGeometry(radius,40,28),positions=geometry.attributes.position;
+    for(let i=0;i<positions.count;i++){
+      const x=positions.getX(i)/radius,y=positions.getY(i)/radius,z=positions.getZ(i)/radius;
+      const ripple=Math.sin(x*13+y*3)*Math.sin(y*11-z*4)*Math.sin(z*12+x*2);
+      const factor=1+amount*.4*ripple;positions.setXYZ(i,x*radius*factor,y*radius*factor,z*radius*factor);
     }
-    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-    parent.add(new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.18,depthWrite:false})));
+    geometry.computeVertexNormals();
+    const mesh=new THREE.Mesh(geometry,material);mesh.position.set(...center);mesh.scale.set(...scale);mesh.castShadow=true;parent.add(mesh);return mesh;
   }
   putBowlDown(){
     if(this.bowl.parent!==this.app.scene){this.app.scene.add(this.bowl);this.bowl.position.copy(this.bowlGround);this.bowl.scale.setScalar(.65);this.bowl.rotation.set(0,0,0);}
@@ -105,7 +129,7 @@ export class Aji {
     const begging=this.hungerPhase==='beg',woof=this.time<this.barkUntil;
     this.legs.forEach((leg,i)=>leg.position.y=.1+(moving?Math.sin(this.time*12+i%2*Math.PI)*.025:begging&&i%2===1?Math.max(0,Math.sin(this.time*6))*.05:0));
     this.body.position.y=sleeping?-.12:(this.activity==='happy'||this.activity==='play'?Math.abs(Math.sin(this.time*8))*.055:Math.sin(this.time*2)*.006);
-    this.body.scale.y=sleeping?.65:1;this.head.rotation.x=this.activity==='eat'?.3+Math.sin(this.time*10)*.07:sleeping?.18:woof?Math.sin(this.time*22)*.12:begging?-.1:0;this.tail.rotation.z=Math.sin(this.time*(this.state.happiness>65?10:3))*(sleeping?.04:.25);this.tongue.visible=!sleeping&&this.hungerPhase!=='carry'&&(this.state.happiness>65||woof);
+    this.body.scale.y=sleeping?.65:1;this.head.rotation.x=this.activity==='eat'?.3+Math.sin(this.time*10)*.07:sleeping?.18:woof?Math.sin(this.time*22)*.12:begging?-.1:0;this.tail.rotation.z=Math.sin(this.time*(this.state.happiness>65?10:3))*(sleeping?.04:.25);this.tongue.visible=!sleeping&&this.hungerPhase!=='carry'&&(this.activity==='play'||woof);
     if(this.activity==='eat'&&this.group.position.distanceTo(this.goal)<.1){this.group.rotation.y=0;if(this.activityUntil===Infinity)this.activityUntil=this.time+4;}
     const blink=sleeping||this.time%4<.12;this.eyes.forEach(eye=>eye.scale.y=blink?.12:1);this.glints.forEach(eye=>eye.visible=!blink);
     if(this.dialog.open)this.renderUI();
