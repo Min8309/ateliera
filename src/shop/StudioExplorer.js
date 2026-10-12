@@ -114,7 +114,6 @@ export class StudioExplorer {
     document.getElementById('btn-inspect-object').addEventListener('click', () => { if (this.target) this.inspect(this.target); });
     this.colliders = [
       ...this.room.colliders,
-      new THREE.Box3(new THREE.Vector3(1.35,-1.55,-1.7),new THREE.Vector3(3.65,1.2,-.7)),
       new THREE.Box3(new THREE.Vector3(-4.65,-1.55,-1.1),new THREE.Vector3(-2.95,0,-.2)),
       new THREE.Box3(new THREE.Vector3(2.9,-1.55,-2.5),new THREE.Vector3(4.85,0,-1.7)),
       new THREE.Box3(new THREE.Vector3(3.85,-1.55,-2.8),new THREE.Vector3(5.05,1.2,-2.1)),

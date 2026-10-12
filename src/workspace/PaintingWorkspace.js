@@ -26,7 +26,7 @@ export class PaintingWorkspace {
       if(!panel.classList.contains('mobile-open'))this.app.explorer.keys.clear();
       document.getElementById('toggle-storage').setAttribute('aria-expanded',String(panel.classList.contains('mobile-open')));
     });
-    this.rack=new THREE.Group();this.rack.name='TenArtworkStorage';this.rack.position.set(-2.3,0,-3);app.scene.add(this.rack);this.buildRack();
+    this.rack=new THREE.Group();this.rack.name='TenArtworkStorage';this.rack.position.set(5.35,0,1.5);this.rack.rotation.y=-Math.PI/2;app.scene.add(this.rack);this.buildRack();
     this.previewDialog=document.getElementById('stored-artwork-dialog');
     document.getElementById('close-stored-preview').addEventListener('click',()=>this.previewDialog.close());
     document.getElementById('restore-stored-preview').addEventListener('click',()=>{if(this.previewRecord){this.previewDialog.close();this.restore(this.previewRecord);}});
@@ -101,6 +101,8 @@ export class PaintingWorkspace {
       const label=new THREE.Mesh(new THREE.PlaneGeometry(.15,.07),new THREE.MeshBasicMaterial({map:texture}));label.position.set(4.03+i*.165,-.42,2.15);this.rack.add(label);
       this.slots.push({canvas,labelCanvas,texture});
     }
+    for(const child of this.rack.children){child.position.x-=4.8;child.position.z-=1.8;}
+    this.rack.updateMatrixWorld(true);this.app.explorer.colliders.push(new THREE.Box3().setFromObject(this.rack));
     this.rack.userData={isInteractable:true,type:'storage',name:'작품 보관대',description:'최대 10장의 작품을 제목과 날짜로 보관합니다.'};
   }
   async thumbnail(dataUrl){
