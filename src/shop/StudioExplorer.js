@@ -43,14 +43,21 @@ export class StudioExplorer {
       this.saveCart();
     });
     window.addEventListener('keydown', event => {
-      if(event.code==='Escape'&&document.getElementById('artwork-storage').classList.contains('mobile-open')){document.getElementById('artwork-storage').classList.remove('mobile-open');return;}
+      if(event.code==='Escape'&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open&&document.getElementById('artwork-storage').classList.contains('mobile-open')){document.getElementById('artwork-storage').classList.remove('mobile-open');return;}
       if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName) || event.target.isContentEditable) return;
+      if(event.ctrlKey||event.metaKey||event.altKey)return;
       if ((event.code === 'ShiftLeft' || event.code === 'ShiftRight') && !event.repeat && !this.app.isDrawingBlocked) {
         event.preventDefault();
         if (this.cartDialog.open) this.cartDialog.close(); else this.openCart();
         return;
       }
+      if(!event.repeat&&event.code==='KeyG'&&!this.app.isDrawingBlocked&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open){event.preventDefault();document.getElementById('toggle-storage').click();return;}
       if (this.app.isDrawingBlocked || this.modalOpen()) return;
+      if(!event.repeat&&event.code==='KeyH'){event.preventDefault();document.getElementById('btn-space-help').click();return;}
+      if(!event.repeat&&event.code==='KeyM'){event.preventDefault();this.visitShop();return;}
+      if(!this.active&&['KeyR','KeyZ','KeyX','Equal','NumpadAdd','Minus','NumpadSubtract'].includes(event.code)){
+        event.preventDefault();document.getElementById(event.code==='KeyR'?'view-reset':['KeyZ','Equal','NumpadAdd'].includes(event.code)?'view-zoom-in':'view-zoom-out').click();return;
+      }
       if (['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code)) {
         event.preventDefault();
         if (!this.active) this.enter({preserveView:true});
@@ -142,6 +149,7 @@ export class StudioExplorer {
   enter({preserveView=false} = {}) {
     if (this.app.isDrawingBlocked || this.active) return;
     this.app.onPointerUp();this.active = true;this.app.controls.enabled = false;
+    this.app.camera.clearViewOffset();
     document.body.classList.add('exploring');this.app.environment.backWall.visible = true;
     document.getElementById('btn-explore').textContent = '그리기 모드';
     this.app.camera.fov = innerWidth < 680 ? 75 : 54;this.app.camera.updateProjectionMatrix();

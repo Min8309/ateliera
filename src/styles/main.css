@@ -911,3 +911,7 @@ body:not(.exploring) .drawing-dock { left:14px; transform:none; right:15px; widt
  body:not(.exploring) .finish-dock { top:15px; bottom:auto; right:155px; }
  body:not(.exploring) .btn-finish { font-size:.6rem; padding:7px; }
 }
+
+/* Immersive room background; navigation and view controls stay keyboard-accessible. */
+#webgl-canvas,body:not(.exploring) #webgl-canvas { position:fixed; inset:0; width:100vw; height:100vh; min-height:0; }
+.space-navigation,.painting-view-controls { display:none!important; }

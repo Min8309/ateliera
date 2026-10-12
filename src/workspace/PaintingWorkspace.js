@@ -28,8 +28,8 @@ export class PaintingWorkspace {
     });
     this.rack=new THREE.Group();this.rack.name='TenArtworkStorage';app.scene.add(this.rack);this.buildRack();
     this.initialize();
-    const bar=document.querySelector('.painting-view-controls');
-    this.resizeObserver=new ResizeObserver(()=>{const bounds=bar.getBoundingClientRect();if(bounds.height)document.documentElement.style.setProperty('--painting-view-top',`${Math.ceil(bounds.bottom+12)}px`);app.onResize();});this.resizeObserver.observe(app.canvasEl);this.resizeObserver.observe(bar);
+    this.resizeObserver=new ResizeObserver(()=>app.onResize());
+    for(const element of [app.canvasEl,document.querySelector('.drawing-dock'),document.querySelector('.studio-panel'),document.getElementById('artwork-storage')])this.resizeObserver.observe(element);
     app.onResize();
   }
   async initialize(){
@@ -53,7 +53,17 @@ export class PaintingWorkspace {
   reset(){this.zoom=1;this.pan=0;this.applyView();}
   applyView(){
     if(this.app.explorer?.active||this.app.isDrawingBlocked)return;
-    this.app.onPointerUp();const distance=Math.max(2.6,2.6/this.app.camera.aspect)/this.zoom;
+    this.app.onPointerUp();
+    const width=innerWidth,height=innerHeight;
+    const studio=document.querySelector('.studio-panel'),storage=document.getElementById('artwork-storage');
+    const left=getComputedStyle(studio).display!=='none'&&width>800?studio.getBoundingClientRect().right+12:12;
+    const right=getComputedStyle(storage).display!=='none'&&width>800?storage.getBoundingClientRect().left-12:width-12;
+    const top=width>800?90:140,bottom=document.querySelector('.drawing-dock').getBoundingClientRect().top-12;
+    const freeWidth=Math.max(100,right-left),freeHeight=Math.max(100,bottom-top);
+    // Shift the projection toward the free painting area while the room fills the screen.
+    this.app.camera.setViewOffset(width,height,width/2-(left+right)/2,height/2-(top+bottom)/2,width,height);
+    const distance=Math.max(2.6*height/freeHeight,2.6*height/freeWidth)/this.zoom;
+    this.app.controls.maxDistance=Math.max(6,distance*1.5);
     this.app.controls.target.set(0,-this.pan,0);this.app.camera.position.set(0,-this.pan,distance);this.app.controls.update();
     document.getElementById('view-zoom').value=this.zoom;document.getElementById('view-pan').value=this.pan;
     document.getElementById('view-percent').textContent=`${Math.round(this.zoom*100)}%`;
