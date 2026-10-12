@@ -915,3 +915,28 @@ body:not(.exploring) .drawing-dock { left:14px; transform:none; right:15px; widt
 /* Immersive room background; navigation and view controls stay keyboard-accessible. */
 #webgl-canvas,body:not(.exploring) #webgl-canvas { position:fixed; inset:0; width:100vw; height:100vh; min-height:0; }
 .space-navigation,.painting-view-controls { display:none!important; }
+
+.touch-mode-controls { display:flex; position:fixed; z-index:31; left:50%; transform:translateX(-50%); bottom:calc(var(--drawing-dock-height,170px) + 20px); gap:6px; }
+.touch-mode-controls button { background:#263d30e8; color:#f5eedd; border:1px solid #8f9d7b; border-radius:8px; padding:9px 12px; font:inherit; font-size:.75rem; cursor:pointer; }
+#move-joystick { display:none; position:fixed; left:24px; bottom:30px; width:128px; height:128px; z-index:31; border:2px solid #d8c59b99; border-radius:50%; background:#1d322bb5; touch-action:none; }
+#joystick-knob { display:block; position:absolute; width:54px; height:54px; border-radius:50%; left:35px; top:35px; background:#d4c5a49c; pointer-events:none; }
+body.exploring #move-joystick { display:block; }
+body.exploring .touch-mode-controls { bottom:auto; top:90px; }
+@media (pointer:fine) { .touch-mode-controls,#move-joystick { display:none!important; } }
+@media (pointer:coarse) {
+ .exploration-controls .walk-buttons { display:none; }
+ .exploration-controls { left:auto; right:15px; transform:none; bottom:25px; max-width:calc(100vw - 185px); }
+ .exploration-controls p { display:none; }
+ .touch-mode-controls { bottom:calc(var(--drawing-dock-height,170px) + 10px); width:max-content; max-width:calc(100vw - 20px); }
+ .touch-mode-controls button { font-size:.65rem; padding:8px; }
+}
+
+body.touch-enabled .touch-mode-controls { display:flex!important; }
+body.touch-enabled.exploring #move-joystick { display:block!important; }
+body.touch-enabled .exploration-controls .walk-buttons { display:none; }
+
+/* Saved works live in the room; the management panel opens only on demand. */
+#artwork-storage { display:none; }
+#artwork-storage.mobile-open { display:block; z-index:32; }
+.artwork-preview-dialog { width:min(760px,calc(100vw - 32px)); }
+#stored-preview-image { display:block; width:100%; max-height:58vh; object-fit:contain; background:#f4efe3; border-radius:8px; margin:12px 0; }

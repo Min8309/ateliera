@@ -75,6 +75,10 @@
     <button id="btn-space-help" type="button">조작 방법</button>
     <button id="btn-cart" type="button" title="Shift로 장바구니 열기·닫기">장바구니 <span id="cart-count">0</span></button>
   </nav>
+  <div class="touch-mode-controls" aria-label="터치 공간 조작">
+    <button id="touch-mode">이동 / 그리기</button><button id="touch-materials">용품실</button><button id="touch-cart">장바구니</button><button id="touch-help">조작</button>
+  </div>
+  <div id="move-joystick" role="group" aria-label="이동 조이스틱"><span id="joystick-knob"></span></div>
   <div class="exploration-controls">
     <p>WASD 이동 · 드래그로 시선 회전 · Shift 장바구니</p>
     <div class="walk-buttons" aria-label="이동 버튼">
@@ -113,6 +117,7 @@
         <tr><td>미술용품실</td><td>용품 진열장 앞으로 바로 이동</td></tr>
       </tbody>
     </table>
+    <p>터치: 하단 버튼으로 이동/그리기 전환 · 왼쪽 조이스틱 이동 · 화면 드래그로 둘러보기 · 이젤 터치로 그리기 복귀. 그리기에서는 두 손가락으로 확대·위아래 이동할 수 있습니다.</p>
     <p>그리기 모드에서는 좌클릭으로 그리기, 우클릭으로 회전, 휠로 확대·축소할 수 있습니다.</p>
   </dialog>
   <dialog id="product-dialog" class="shop-dialog" aria-labelledby="product-title">
@@ -140,6 +145,12 @@
   </section>
   <button id="toggle-studio-settings" class="settings-toggle">작업실 설정</button>
   <button id="toggle-storage" class="storage-toggle" aria-expanded="false" aria-controls="artwork-storage">작품 보관함</button>
+  <dialog id="stored-artwork-dialog" class="shop-dialog artwork-preview-dialog" aria-labelledby="stored-preview-title">
+    <button id="close-stored-preview" class="shop-close" aria-label="작품 미리보기 닫기">✕</button>
+    <h2 id="stored-preview-title"></h2><p id="stored-preview-date"></p>
+    <img id="stored-preview-image" alt="저장된 그림">
+    <button id="restore-stored-preview">이 그림으로 다시 그리기</button>
+  </dialog>
   <aside id="artwork-storage" aria-label="10장 작품 보관함">
     <h2>나의 작품 보관대 <span id="storage-count">0 / 10</span></h2>
     <label>제목 <input id="saved-title" maxlength="80" placeholder="그림 제목"></label>

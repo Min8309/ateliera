@@ -8,6 +8,7 @@ export class StudioExplorer {
     this.room = new MaterialsRoom(app.environment);
     this.active = false;
     this.keys = new Set();
+    this.touchMove={x:0,y:0};
     this.raycaster = new THREE.Raycaster();this.raycaster.far = 7;
     this.yaw = 0;this.pitch = 0;
     this.drag = null;
@@ -43,7 +44,7 @@ export class StudioExplorer {
       this.saveCart();
     });
     window.addEventListener('keydown', event => {
-      if(event.code==='Escape'&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open&&document.getElementById('artwork-storage').classList.contains('mobile-open')){document.getElementById('artwork-storage').classList.remove('mobile-open');return;}
+      if(event.code==='Escape'&&!this.app.workspace?.previewDialog?.open&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open&&document.getElementById('artwork-storage').classList.contains('mobile-open')){document.getElementById('artwork-storage').classList.remove('mobile-open');return;}
       if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName) || event.target.isContentEditable) return;
       if(event.ctrlKey||event.metaKey||event.altKey)return;
       if ((event.code === 'ShiftLeft' || event.code === 'ShiftRight') && !event.repeat && !this.app.isDrawingBlocked) {
@@ -51,7 +52,7 @@ export class StudioExplorer {
         if (this.cartDialog.open) this.cartDialog.close(); else this.openCart();
         return;
       }
-      if(!event.repeat&&event.code==='KeyG'&&!this.app.isDrawingBlocked&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open){event.preventDefault();document.getElementById('toggle-storage').click();return;}
+      if(!event.repeat&&event.code==='KeyG'&&!this.app.workspace?.previewDialog?.open&&!this.app.isDrawingBlocked&&!this.productDialog.open&&!this.cartDialog.open&&!this.helpDialog.open){event.preventDefault();document.getElementById('toggle-storage').click();return;}
       if (this.app.isDrawingBlocked || this.modalOpen()) return;
       if(!event.repeat&&event.code==='KeyH'){event.preventDefault();document.getElementById('btn-space-help').click();return;}
       if(!event.repeat&&event.code==='KeyM'){event.preventDefault();this.visitShop();return;}
@@ -113,7 +114,7 @@ export class StudioExplorer {
     document.getElementById('btn-inspect-object').addEventListener('click', () => { if (this.target) this.inspect(this.target); });
     this.colliders = [
       ...this.room.colliders,
-      new THREE.Box3(new THREE.Vector3(3.85,-1.55,1.3),new THREE.Vector3(5.75,1.2,2.3)),
+      new THREE.Box3(new THREE.Vector3(1.35,-1.55,-1.7),new THREE.Vector3(3.65,1.2,-.7)),
       new THREE.Box3(new THREE.Vector3(-4.65,-1.55,-1.1),new THREE.Vector3(-2.95,0,-.2)),
       new THREE.Box3(new THREE.Vector3(2.9,-1.55,-2.5),new THREE.Vector3(4.85,0,-1.7)),
       new THREE.Box3(new THREE.Vector3(3.85,-1.55,-2.8),new THREE.Vector3(5.05,1.2,-2.1)),
@@ -121,9 +122,10 @@ export class StudioExplorer {
     ];
   }
 
-  modalOpen() { return this.productDialog.open || this.cartDialog.open || this.helpDialog.open || document.getElementById('artwork-storage').classList.contains('mobile-open'); }
+  modalOpen() { return this.productDialog.open || this.cartDialog.open || this.helpDialog.open || this.app.workspace?.previewDialog?.open || document.getElementById('artwork-storage').classList.contains('mobile-open'); }
   openCart() {
-    this.keys.clear();this.drag = null;this.hideTooltip();
+    this.keys.clear();this.drag = null;this.app.touchControls?.stop();this.hideTooltip();
+    this.app.workspace?.previewDialog?.close();
     this.productDialog.close();this.helpDialog.close();
     if (!this.cartDialog.open) this.cartDialog.showModal();
   }
@@ -148,8 +150,10 @@ export class StudioExplorer {
   }
   enter({preserveView=false} = {}) {
     if (this.app.isDrawingBlocked || this.active) return;
+    this.app.touchControls?.cancelGesture();
     this.app.onPointerUp();this.active = true;this.app.controls.enabled = false;
     this.app.camera.clearViewOffset();
+    this.app.touchControls?.updateMode();
     document.body.classList.add('exploring');this.app.environment.backWall.visible = true;
     document.getElementById('btn-explore').textContent = '그리기 모드';
     this.app.camera.fov = innerWidth < 680 ? 75 : 54;this.app.camera.updateProjectionMatrix();
@@ -171,7 +175,8 @@ export class StudioExplorer {
     this.status.textContent = '진열된 물건이나 이름표를 선택해 장바구니에 담으세요.';
   }
   leave() {
-    this.keys.clear();this.drag = null;this.active = false;this.status.textContent = '';
+    this.keys.clear();this.drag = null;this.app.touchControls?.stop();this.active = false;this.status.textContent = '';
+    this.app.touchControls?.updateMode();
     this.hideTooltip();this.helpDialog.close();
     this.productDialog.close();this.cartDialog.close();document.body.classList.remove('exploring');this.app.environment.backWall.visible = false;
     document.getElementById('btn-explore').textContent = '화실 둘러보기';
@@ -195,8 +200,10 @@ export class StudioExplorer {
     return null;
   }
   inspect(data) {
-    if(data.type==='storage'){this.keys.clear();document.getElementById('artwork-storage').classList.add('mobile-open');return;}
-    this.keys.clear();this.hideTooltip();
+    if(data.type==='stored-artwork'){this.app.workspace?.openPreview(data.artworkId);return;}
+    if(data.type==='easel'){this.leave();return;}
+    if(data.type==='storage'){this.app.touchControls?.stop();this.keys.clear();document.getElementById('artwork-storage').classList.add('mobile-open');return;}
+    this.keys.clear();this.app.touchControls?.stop();this.hideTooltip();
     if (data.type === 'door') {
       this.room.openDoor();this.status.textContent = '문이 열렸습니다. 안으로 걸어 들어가세요.';
     } else if (data.type === 'product') {
@@ -217,7 +224,8 @@ export class StudioExplorer {
   }
   update(delta) {
     this.room.update(delta);
-    if (!this.active || this.modalOpen()) return;
+    if (!this.active) return;
+    if(this.modalOpen()){this.app.touchControls?.stop();return;}
     if (this.keys.size) this.hideTooltip();
     this.move(delta);
     this.target = this.findTarget();
@@ -229,9 +237,9 @@ export class StudioExplorer {
     const duration = Math.max(0, Math.min(delta,.25));
     const steps = Math.max(1,Math.ceil(duration/.05));
     const dt = duration/steps;
-    const forward = Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown'));
-    const sideways = Number(this.keys.has('KeyD') || this.keys.has('ArrowRight')) - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft'));
-    const length = Math.hypot(forward,sideways) || 1;
+    const forward = Number(this.keys.has('KeyW') || this.keys.has('ArrowUp')) - Number(this.keys.has('KeyS') || this.keys.has('ArrowDown'))-(this.touchMove?.y||0);
+    const sideways = Number(this.keys.has('KeyD') || this.keys.has('ArrowRight')) - Number(this.keys.has('KeyA') || this.keys.has('ArrowLeft'))+(this.touchMove?.x||0);
+    const length = Math.max(1,Math.hypot(forward,sideways));
     const dx = (-Math.sin(this.yaw)*forward + Math.cos(this.yaw)*sideways) / length * 2.2 * dt;
     const dz = (-Math.cos(this.yaw)*forward - Math.sin(this.yaw)*sideways) / length * 2.2 * dt;
     const pos = this.app.camera.position;

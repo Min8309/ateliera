@@ -26,11 +26,29 @@ export class PaintingWorkspace {
       if(!panel.classList.contains('mobile-open'))this.app.explorer.keys.clear();
       document.getElementById('toggle-storage').setAttribute('aria-expanded',String(panel.classList.contains('mobile-open')));
     });
-    this.rack=new THREE.Group();this.rack.name='TenArtworkStorage';app.scene.add(this.rack);this.buildRack();
+    this.rack=new THREE.Group();this.rack.name='TenArtworkStorage';this.rack.position.set(-2.3,0,-3);app.scene.add(this.rack);this.buildRack();
+    this.previewDialog=document.getElementById('stored-artwork-dialog');
+    document.getElementById('close-stored-preview').addEventListener('click',()=>this.previewDialog.close());
+    document.getElementById('restore-stored-preview').addEventListener('click',()=>{if(this.previewRecord){this.previewDialog.close();this.restore(this.previewRecord);}});
+    let tap=null;
+    app.canvasEl.addEventListener('pointerdown',event=>{if(!app.explorer.active)tap={x:event.clientX,y:event.clientY,id:event.pointerId};});
+    window.addEventListener('pointerup',event=>{if(!tap||tap.id!==event.pointerId)return;const start=tap;tap=null;if(app.explorer.active||app.isDrawingBlocked||Math.hypot(event.clientX-start.x,event.clientY-start.y)>8)return;const data=app.explorer.findTarget(app.getNormalizedPointer(event));if(data?.type==='stored-artwork')this.openPreview(data.artworkId);else if(data?.type==='storage')this.openStorage();});
     this.initialize();
     this.resizeObserver=new ResizeObserver(()=>app.onResize());
     for(const element of [app.canvasEl,document.querySelector('.drawing-dock'),document.querySelector('.studio-panel'),document.getElementById('artwork-storage')])this.resizeObserver.observe(element);
     app.onResize();
+  }
+  openStorage(){this.app.touchControls?.stop();document.getElementById('artwork-storage').classList.add('mobile-open');}
+  async openPreview(id){
+    if(this.app.isDrawingBlocked)return;
+    try{
+      const record=(await this.repository.list()).find(item=>item.id===id);if(!record)return;
+      this.app.touchControls?.stop();this.app.explorer.keys.clear();this.previewRecord=record;
+      document.getElementById('stored-preview-title').textContent=record.title;
+      document.getElementById('stored-preview-date').textContent=record.dateLabel;
+      const image=document.getElementById('stored-preview-image');image.src=record.previewUrl;image.alt=record.title;
+      if(!this.previewDialog.open)this.previewDialog.showModal();
+    }catch(e){this.status.textContent=e.message;}
   }
   async initialize(){
     try{
@@ -74,7 +92,7 @@ export class PaintingWorkspace {
     // Flat drawers beneath an upright drying rack on the right-hand wall.
     box(1.8,1.05,.9,4.8,-1,1.8,wood);
     for(let i=0;i<10;i++){box(1.7,.065,.06,4.8,-1.43+i*.095,2.27,wood);box(.18,.022,.04,4.8,-1.43+i*.095,2.32,metal);}
-    for(const x of [3.9,5.7])box(.055,1.9,.6,x,.05,1.8,metal);
+    for(const x of [3.7,5.85])box(.055,1.9,.6,x,.05,1.8,metal);
     this.slots=[];
     for(let i=0;i<10;i++){
       const canvas=box(.025,1.1,.65,4.03+i*.165,.15,1.8,new THREE.MeshStandardMaterial({color:'#e6dac0'}));
@@ -114,10 +132,10 @@ export class PaintingWorkspace {
         const date=document.createElement('input');date.type='date';date.value=record.dateLabel;date.setAttribute('aria-label','그림 날짜');card.append(date);
         const edit=async()=>{try{record.title=title.value.trim()||'제목 없는 그림';record.dateLabel=date.value||artworkDate();await this.repository.put(record);if(record.id===this.app.currentArtwork.id){document.getElementById('saved-title').value=record.title;document.getElementById('saved-date').value=record.dateLabel;}await this.refresh();}catch(e){this.status.textContent=e.message;}};
         title.addEventListener('change',edit);date.addEventListener('change',edit);
-        const open=document.createElement('button');open.textContent='다시 그리기';open.addEventListener('click',()=>this.restore(record));card.append(open);
+        const open=document.createElement('button');open.textContent='그림 보기';open.addEventListener('click',()=>this.openPreview(record.id));card.append(open);
         const remove=document.createElement('button');remove.textContent='삭제';remove.addEventListener('click',async()=>{if(confirm(`“${record.title}”을 보관대에서 삭제할까요?`)){try{await this.repository.remove(record.id);await this.refresh();}catch(e){this.status.textContent=e.message;}}});card.append(remove);list.append(card);
       });
-      this.slots.forEach((slot,i)=>{const record=records[i],ctx=slot.labelCanvas.getContext('2d');ctx.fillStyle='#efe2c7';ctx.fillRect(0,0,256,96);ctx.fillStyle='#453929';ctx.font='24px sans-serif';ctx.fillText(record?record.title.slice(0,9):`빈칸 ${i+1}`,8,35);ctx.font='20px sans-serif';ctx.fillText(record?.dateLabel||'작품 보관',8,75);slot.texture.needsUpdate=true;slot.canvas.material.color.set(record?'#ffffff':'#a89e89');slot.canvas.material.map?.dispose();slot.canvas.material.map=record?new THREE.TextureLoader().load(record.previewUrl):null;if(slot.canvas.material.map)slot.canvas.material.map.colorSpace=THREE.SRGBColorSpace;slot.canvas.material.needsUpdate=true;});
+      this.slots.forEach((slot,i)=>{const record=records[i],ctx=slot.labelCanvas.getContext('2d');ctx.fillStyle='#efe2c7';ctx.fillRect(0,0,256,96);ctx.fillStyle='#453929';ctx.font='24px sans-serif';ctx.fillText(record?record.title.slice(0,9):`빈칸 ${i+1}`,8,35);ctx.font='20px sans-serif';ctx.fillText(record?.dateLabel||'작품 보관',8,75);slot.texture.needsUpdate=true;const data=record?{isInteractable:true,type:'stored-artwork',artworkId:record.id,name:record.title,description:record.dateLabel}:{isInteractable:true,type:'storage',name:'빈 작품 보관칸',description:'새 그림을 보관합니다.'};slot.canvas.userData=data;this.rack.children.find(child=>child.material?.map===slot.texture).userData=data;slot.canvas.material.color.set(record?'#ffffff':'#a89e89');slot.canvas.material.map?.dispose();slot.canvas.material.map=record?new THREE.TextureLoader().load(record.previewUrl):null;if(slot.canvas.material.map)slot.canvas.material.map.colorSpace=THREE.SRGBColorSpace;slot.canvas.material.needsUpdate=true;});
     }catch(e){this.status.textContent=`보관함을 열지 못했습니다: ${e.message}`;}
   }
   restore(record){

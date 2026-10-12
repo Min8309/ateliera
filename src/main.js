@@ -11,6 +11,7 @@
  */
 
 import * as THREE from 'three';
+import { TouchControls } from './workspace/TouchControls.js';
 import { PaintingWorkspace } from './workspace/PaintingWorkspace.js';
 import { StudioExplorer } from './shop/StudioExplorer.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -82,6 +83,7 @@ class AtelieraApp {
     this.explorer = new StudioExplorer(this);
     this.workspace = new PaintingWorkspace(this);
     this.workspace.reset();
+    this.touchControls=new TouchControls(this);
 
     // 렌더 루프 가동
     this.animate = this.animate.bind(this);
@@ -119,6 +121,7 @@ class AtelieraApp {
 
     this.drawingPlane = new THREE.Mesh(planeGeo, planeMat);
     this.drawingPlane.name = 'EaselCanvas';
+    this.drawingPlane.userData={isInteractable:true,type:'easel',name:'이젤',description:'그리기 모드로 돌아갑니다.'};
     this.scene.add(this.drawingPlane);
 
     // 기본 미니멀 테두리
